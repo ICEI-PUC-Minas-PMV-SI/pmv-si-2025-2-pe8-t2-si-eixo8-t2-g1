@@ -10,7 +10,7 @@ Descrever resumidamente, em um ou dois parágrafos, o projeto que está sendo de
 
 ## Integrantes
 
-*Fernanda Fonseca Ribeiro Bertoldo 
+* Fernanda Fonseca Ribeiro Bertoldo 
 * Gabriel Novais Maia
 * Higor Henrique Batista Souza
 * João Victor Dias Lopes 
