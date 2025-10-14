@@ -24,3 +24,9 @@ A concepção desta iniciativa fundamenta-se em um processo estruturado de Intel
 
 * Simone Fernandes Queiroz
 
+## Planejamento
+
+| Etapa | Atividades |
+|---|---|
+| Etapa 1 | Apresentação da empresa do projeto |
+| Etapa 2 | Plano de inteligência competitiva |
