@@ -30,3 +30,7 @@ A concepção desta iniciativa fundamenta-se em um processo estruturado de Intel
 |---|---|
 | Etapa 1 | Apresentação da empresa do projeto |
 | Etapa 2 | Plano de inteligência competitiva |
+| Etapa 3 | Desenvolvimento de soluções de SI |
+| Etapa 4 | Apresentação do projeto |
+| Etapa 5 | Planejamento Estratégico de TI |
+
