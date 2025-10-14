@@ -1,4 +1,4 @@
-# Título do Projeto
+#  SISTEMA PARA EMPRESA DE TERAPIA OCUPACIONAL
 
 `CURSO: Sistemas de Informação`
 
@@ -6,7 +6,9 @@
 
 `SEMESTRE: 8º`
 
-Descrever resumidamente, em um ou dois parágrafos, o projeto que está sendo desenvolvido.
+O presente projeto constitui o Trabalho de Conclusão de Curso em Sistemas de Informação e objetiva o desenvolvimento de uma solução tecnológica customizada para a Clínica de Terapia Ocupacional, localizada em Ipatinga/MG. 
+
+A concepção desta iniciativa fundamenta-se em um processo estruturado de Inteligência Competitiva (IC), com enfoque na mitigação de riscos e na modernização da gestão. Ao longo de sua execução, realizaram-se análises de processos internos, levantamento de dados operacionais e pesquisas de mercado, a fim de subsidiar a tomada de decisões mediante a organização e automação de informações.
 
 ## Integrantes
 
