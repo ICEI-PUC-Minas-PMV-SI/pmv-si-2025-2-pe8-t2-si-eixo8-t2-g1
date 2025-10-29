@@ -42,11 +42,13 @@ As interfaces podem sofrer alteração até o fim do projeto.
 <img width="1363" height="553" alt="image" src="https://github.com/user-attachments/assets/fda5ced7-e243-4c96-b4e7-ef0fc8518fd7" />
 
 * Tela de Faturamento
+  
 A funcionalidade ainda está em desenvolvimento.
   
 <img width="1361" height="553" alt="image" src="https://github.com/user-attachments/assets/4f2e338f-45cb-4621-8186-dfcb3b86c551" />
 
-* Tela de Configurações 
+* Tela de Configurações
+  
 A funcionalidade ainda está em desenvolvimento. 
 <img width="1353" height="547" alt="image" src="https://github.com/user-attachments/assets/4e81801f-f56b-4637-92cf-49940c758151" />
 
