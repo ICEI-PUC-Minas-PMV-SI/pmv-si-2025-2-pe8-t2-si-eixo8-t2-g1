@@ -26,16 +26,16 @@ As interfaces podem sofrer alteração até o fim do projeto.
 <img width="1365" height="550" alt="image" src="https://github.com/user-attachments/assets/5e9a7b46-b9e6-4899-a11b-c9de2f8ce3a8" />
 
 
-* Tela de agendamentos
+* Tela agendamentos
 <img width="1354" height="548" alt="image" src="https://github.com/user-attachments/assets/fc927733-100a-442f-9eb3-61b727128cef" />
 
 * Tela Editar Agendamento
 <img width="1365" height="561" alt="image" src="https://github.com/user-attachments/assets/f90c7083-7741-48fb-a6fd-5addeac3e41e" />
 
-* Tela de novo agendamento
+* Tela  novo agendamento
 <img width="1365" height="559" alt="image" src="https://github.com/user-attachments/assets/72697caa-9871-4c98-81e0-bc3eb22b6f1b" />
 
-* Tela de atendimento 
+* Tela  atendimento 
 <img width="1357" height="542" alt="image" src="https://github.com/user-attachments/assets/4d4beb22-7d0a-4e8a-bbbd-d46c965e2047" />
 
 * Tela Finalizar Atendimentos
@@ -61,13 +61,13 @@ As interfaces podem sofrer alteração até o fim do projeto.
 <img width="1365" height="552" alt="image" src="https://github.com/user-attachments/assets/a18a883b-008e-4d3a-896c-a61ce1bed924" />
 <img width="1363" height="553" alt="image" src="https://github.com/user-attachments/assets/fda5ced7-e243-4c96-b4e7-ef0fc8518fd7" />
 
-* Tela de Faturamento
+* Tela Faturamento
   
 A funcionalidade ainda está em desenvolvimento.
   
 <img width="1361" height="553" alt="image" src="https://github.com/user-attachments/assets/4f2e338f-45cb-4621-8186-dfcb3b86c551" />
 
-* Tela de Configurações
+* Tela Configurações
   
 A funcionalidade ainda está em desenvolvimento. 
 <img width="1353" height="547" alt="image" src="https://github.com/user-attachments/assets/4e81801f-f56b-4637-92cf-49940c758151" />
@@ -131,10 +131,69 @@ A funcionalidade ainda está em desenvolvimento.
 
 # 3.4 Preparação do Desenvolvimento
 
- Objetivos:
-Montar plano de execução: o que será implementado primeiro?
-Divisão das tarefas entre os integrantes.
-Início do desenvolvimento de partes estruturais do sistema.
+Plano de Execução
+
+O desenvolvimento do sistema seguirá uma abordagem incremental e modular, priorizando a criação dos componentes essenciais para garantir o funcionamento básico da aplicação.
+A sequência de implementação será organizada da seguinte forma:
+
+### Desenvolvimento da API (Back-end em C# / ASP.NET Core)
+
+* Criação da estrutura inicial da API REST.
+* Configuração do banco de dados PostgreSQL e integração via Entity Framework Core.
+* Implementação dos primeiros endpoints e testes de conexão.
+
+### Módulo de Autenticação e Login
+
+* Implementação do controle de acesso de usuários.
+* Criação de endpoints de login e registro.
+* Geração e validação de tokens JWT para autenticação segura.
+
+### Módulo de Pacientes
+
+* Cadastro, edição e listagem de pacientes.
+* Integração do front-end React com a API para exibição dos dados.
+
+### Módulo de Agendamentos
+
+* Criação, edição e finalização de agendamentos.
+* Exibição de agendamentos no painel principal.
+* Implementação de filtros e atualização automática da interface.
+
+### Módulo de Faturamento
+
+* Registro de pagamentos e geração de relatórios financeiros.
+* Integração com dados de pacientes e agendamentos.
+
+### Módulo de Configurações
+
+* Gerenciamento das preferências do sistema.
+* Ajustes de perfil de usuário e personalização da aplicação.
+
+## Divisão das Tarefas por Integrante
+
+| Integrante | Foco Principal | Tarefas Atreladas |
+| :--- | :--- | :--- |
+| Lara Alves de Freitas | Documentação | Conexão com o Plano de IC e Planejamento da Solução; documentação dos wireframes e da estrutura de navegação do sistema; elaboração do fluxo de telas; descrição do armazenamento e acesso aos dados; montagem do plano de execução. |
+| Gabriel Novais Maia | Desenvolvimento | Desenvolvimento do back-end: estrutura do banco de dados, criação da API, cadastro de produtos e vendas; desenvolvimento do front-end. |
+| Renato Cifuentes Dias de Araújo Neto| Documentação | Elaboração dos casos de uso; definição dos requisitos funcionais e não funcionais; organização das histórias de usuário; desenvolvimento do esboço do banco de dados (modelo ER). |
+| Higor Henrique Batista Souza | Desenvolvimento |Apoio na implementação e ajustes das telas no front-end. |
+| Gabriel Novais Maia  | Deploy | Configuração do servidor, ambiente de produção, integração contínua e publicação do sistema. |
+
+
+## Início do Desenvolvimento das Partes Estruturais do Sistema
+
+O desenvolvimento do sistema teve início pela construção das **partes estruturais**, fundamentais para garantir a base técnica e a integração entre os módulos.  
+
+Nesta etapa, foram implementados os seguintes pontos principais:
+
+- **Configuração inicial do projeto back-end** em **C# (ASP.NET Core)**, incluindo a criação da **API REST** e a integração com o **banco de dados PostgreSQL** por meio do **Entity Framework Core**.  
+- **Estruturação do banco de dados**, com a definição das principais tabelas e relacionamentos necessários para o funcionamento dos módulos.  
+- **Criação dos primeiros endpoints** para operações de autenticação e manipulação de dados (CRUD).  
+- **Preparação do ambiente front-end** em **React**, garantindo a comunicação com a API e o consumo dos dados de forma dinâmica.  
+- **Implementação inicial das rotas e componentes base** da interface, servindo como esqueleto para as futuras telas do sistema.
+
+Essa fase foi essencial para estabelecer a **arquitetura de comunicação entre front-end, back-end e banco de dados**, criando uma base sólida para o desenvolvimento das próximas funcionalidades.
+
 
 # 3.5 Geração de Relatórios ou Dashboards Internos
 Objetivo: 
