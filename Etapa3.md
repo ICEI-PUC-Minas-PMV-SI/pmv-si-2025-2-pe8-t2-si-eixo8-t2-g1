@@ -9,6 +9,11 @@ Planejar a estrutura de navegação do sistema; o fluxo de telas, o armazenament
 
 A arquitetura da aplicação adota o modelo cliente-servidor em camadas, garantindo uma separação bem definida entre front-end, back-end e banco de dados. O front-end é desenvolvido em React, proporcionando uma interface moderna, dinâmica e responsiva para o usuário. O back-end é implementado em C#, responsável pela lógica de negócios e pela comunicação entre as camadas. Já o banco de dados PostgreSQL é utilizado para armazenamento seguro e eficiente das informações. Essa combinação de tecnologias assegura modularidade, escalabilidade, reutilização de código, além de facilitar a manutenção e os testes do sistema.
 
+* Diagrama simplificado
+
+<img width="420" height="398" alt="image" src="https://github.com/user-attachments/assets/30d93e90-4363-436d-96b3-21a8ae254171" />
+
+* Fluxos de Telas 
 
 # Interface do sistema
 
