@@ -175,7 +175,6 @@ A sequência de implementação será organizada da seguinte forma:
 | :--- | :--- | :--- |
 | Lara Alves de Freitas | Documentação | Conexão com o Plano de IC e Planejamento da Solução; documentação dos wireframes e da estrutura de navegação do sistema; elaboração do fluxo de telas; descrição do armazenamento e acesso aos dados; montagem do plano de execução. |
 | Gabriel Novais Maia | Desenvolvimento | Desenvolvimento do back-end: estrutura do banco de dados, criação da API, cadastro de produtos e vendas; desenvolvimento do front-end. |
-| Renato Cifuentes Dias de Araújo Neto| Documentação | Elaboração dos casos de uso; definição dos requisitos funcionais e não funcionais; organização das histórias de usuário; desenvolvimento do esboço do banco de dados (modelo ER). |
 | Higor Henrique Batista Souza | Desenvolvimento |Apoio na implementação e ajustes das telas no front-end. |
 | Gabriel Novais Maia  | Deploy | Configuração do servidor, ambiente de produção, integração contínua e publicação do sistema. |
 
