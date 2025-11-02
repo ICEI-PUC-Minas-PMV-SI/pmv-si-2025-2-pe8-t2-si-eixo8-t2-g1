@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "identityapp1": {
-      "connectionInfo": "App registration: TESTE, Tenant: sga.pucminas.br (sgapucminasbr.onmicrosoft.com - Microsoft Entra ID)",
-      "type": "identityapp.default"
-    }
-  }
-}
