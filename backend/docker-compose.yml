@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  meu-app:
+    build: .
+    image: agendamento-clinica-to:latest
+    container_name: agendamento-clinica-to
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+      - Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Warning
+      - "ConnectionStrings__AgendamentoTODatabase=Host=35.211.32.205;Port=5432;Username=apiuser;Password=a_strong_api_password;Database=AgendamentoTO_DB;CommandTimeout=60;"
+      - "TokenSettings__Token=MinhaSuperSecretaSenhaParaMeuSuperAppQueEstouFazendoComAuth3ntic4c40*JWTUsandoC#/DotNet9"
+      - TokenSettings__Issuer=FrontEndTO
+      - TokenSettings__Audience=TerapeutasOcupacionais
+      - SmtpSettings__Server=smtp.gmail.com
+      - SmtpSettings__Port=587
+      - SmtpSettings__Username=gabriel.gnm@gmail.com
+      - SmtpSettings__Password="vzve apdc tfkk xdjh"
+    networks:
+      - minha-rede-interna
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiYTQzMmU5MTJiMTU4ZDIzNTRlNGYyNzk4NzI5N2YwYWUiLCJ0IjoiY2Q4MDJmNDYtYmZkYi00MjY5LWEwMDktOTJhOGU5ZmEyNWRiIiwicyI6Ik5EZzJaV0kxTnpVdFlUQm1NUzAwTVdJNExUaGhNV1F0WkRKbE1UbGtOelppWW1VNCJ9
+    networks:
+      - minha-rede-interna
+
+networks:
+  minha-rede-interna:
+    driver: bridge

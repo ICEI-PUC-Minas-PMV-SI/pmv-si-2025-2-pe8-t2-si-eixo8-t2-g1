@@ -1,6 +1,0 @@
-[submodule "ApiClinicaTo"]
-	path = ApiClinicaTo
-	url = https://github.com/seu-usuario/ApiClinicaTo.git
-[submodule "front-clinica-ana-eixo-8"]
-	path = front-clinica-ana-eixo-8
-	url = https://github.com/seu-usuario/front-clinica-ana-eixo-8.git
