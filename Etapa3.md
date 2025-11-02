@@ -17,7 +17,7 @@ A arquitetura da aplicação adota o modelo cliente-servidor em camadas, garanti
  ### As interfaces podem sofrer alteração até o fim do projeto. *
 
 * Tela Login
- ![Imagem do WhatsApp de 2025-11-02 à(s) 13 40 23_a7554903](https://github.com/user-attachments/assets/0dd4c8e7-eb60-43a8-ae27-795d5676351c)
+![Imagem do WhatsApp de 2025-11-02 à(s) 13 40 23_a7554903](https://github.com/user-attachments/assets/0dd4c8e7-eb60-43a8-ae27-795d5676351c)
 
 
 * Tela inicial 
@@ -69,15 +69,13 @@ A arquitetura da aplicação adota o modelo cliente-servidor em camadas, garanti
 <img width="1363" height="553" alt="image" src="https://github.com/user-attachments/assets/fda5ced7-e243-4c96-b4e7-ef0fc8518fd7" />
 
 * Tela Faturamento
+
   
-A funcionalidade ainda está em desenvolvimento.
-  
-<img width="1361" height="553" alt="image" src="https://github.com/user-attachments/assets/4f2e338f-45cb-4621-8186-dfcb3b86c551" />
+![Imagem do WhatsApp de 2025-11-02 à(s) 15 19 56_2e7b9915](https://github.com/user-attachments/assets/1891bf44-876c-4204-b2d1-6845cd5555f4)
 
 * Tela Configurações
   
-A funcionalidade ainda está em desenvolvimento. 
-<img width="1353" height="547" alt="image" src="https://github.com/user-attachments/assets/4e81801f-f56b-4637-92cf-49940c758151" />
+![Imagem do WhatsApp de 2025-11-02 à(s) 15 19 37_c3351aad](https://github.com/user-attachments/assets/fa8b8dd4-d2f3-4874-acc4-2a5ad8c4bc88)
 
 
 # Fluxos de Telas 
