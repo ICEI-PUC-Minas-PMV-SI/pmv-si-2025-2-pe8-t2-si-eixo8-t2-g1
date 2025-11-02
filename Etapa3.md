@@ -13,8 +13,8 @@ A arquitetura da aplicação adota o modelo cliente-servidor em camadas, garanti
 
 
 # Interface do sistema
-
-* As interfaces podem sofrer alteração até o fim do projeto. *
+ 
+ ### As interfaces podem sofrer alteração até o fim do projeto. *
 
 * Tela Login
  ![Imagem do WhatsApp de 2025-11-02 à(s) 13 40 23_a7554903](https://github.com/user-attachments/assets/0dd4c8e7-eb60-43a8-ae27-795d5676351c)
