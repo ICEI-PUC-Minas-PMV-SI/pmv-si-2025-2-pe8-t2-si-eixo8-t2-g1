@@ -14,10 +14,17 @@ A arquitetura da aplicação adota o modelo cliente-servidor em camadas, garanti
 
 # Interface do sistema
 
-As interfaces podem sofrer alteração até o fim do projeto. 
+* As interfaces podem sofrer alteração até o fim do projeto. *
+
+* Tela Login
+ ![Imagem do WhatsApp de 2025-11-02 à(s) 13 40 23_a7554903](https://github.com/user-attachments/assets/0dd4c8e7-eb60-43a8-ae27-795d5676351c)
+
 
 * Tela inicial 
-<img width="1358" height="548" alt="image" src="https://github.com/user-attachments/assets/df095c4d-2ed3-4cee-9181-776311477257" />
+![Imagem do WhatsApp de 2025-11-02 à(s) 13 49 46_8fc30e94](https://github.com/user-attachments/assets/f031a4e1-28f1-49d8-a1cc-84e66983c934)
+
+![Imagem do WhatsApp de 2025-11-02 à(s) 13 50 00_fc281e1b](https://github.com/user-attachments/assets/495b5384-1320-44a1-9eb9-945e86395bdb)
+
 
 * Tela Editar Agendamento
 <img width="1365" height="602" alt="image" src="https://github.com/user-attachments/assets/b17183c2-ef62-4b6d-8177-49afde189e29" />
@@ -198,5 +205,30 @@ Essa fase foi essencial para estabelecer a **arquitetura de comunicação entre 
 
 
 # 3.5 Geração de Relatórios ou Dashboards Internos
-Objetivo: 
-Demonstrar como o sistema auxilia na tomada de decisão estratégica, conforme as necessidades de Inteligência Competitiva levantadas no plano.
+
+## Como o Sistema Auxilia na Tomada de Decisão Estratégica
+
+Com base nas necessidades de Inteligência Competitiva (IC) identificadas no plano, o sistema foi desenvolvido para fornecer relatórios gerenciais e dashboards interativos que apoiam diretamente a tomada de decisões estratégicas da clínica de terapia ocupacional
+
+Entre as funcionalidades principais, destacam-se:
+
+* Relatórios de Faturamento: permitem acompanhar e auxiliar no planejamento financeiro da clínica.
+* Relatórios de Atendimento de Pacientes: fornecem informações detalhadas sobre cada sessão, permitindo monitorar a produtividade, avaliar a evolução dos pacientes e otimizar o agendamento de atendimentos.
+* Dashboards Visuais: oferecem uma visão consolidada e de fácil interpretação dos dados, tornando a análise mais rápida e precisa para decisões estratégicas.
+
+
+## Conexão com as KIQs do Plano de IC
+
+Os relatórios do sistema foram desenvolvidos para responder diretamente às perguntas estratégicas (KIQs – Key Intelligence Questions) identificadas no Plano de Inteligência Competitiva da clínica. Entre as principais KIQs atendidas, destacam-se:
+
+* Registro pós-atendimento: Quais informações devem ser registradas após cada sessão?
+* O sistema deve permitir comparação de indicadores ao longo do tempo?
+* Quais pacientes estão em estado mais crítico, em acompanhamento contínuo ou próximos da alta?
+* Quais informações clínicas são essenciais no cadastro do paciente?
+* Quais dados são essenciais para a gestão da clínica? 
+* Como organizar o histórico de atendimentos realizados por paciente?
+
+Dessa forma, os relatórios e dashboards do sistema transformam dados em insights estratégicos, permitindo que a gestão da clínica tome decisões baseadas em informações concretas, otimizando a qualidade do atendimento e a eficiência operacional.
+
+
+
