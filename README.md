@@ -29,6 +29,4 @@ A concepção desta iniciativa fundamenta-se em um processo estruturado de Intel
 | Etapa | Atividades |
 |---|---|
 | Etapa 3 | [Desenvolvimento de soluções de SI](https://github.com/ICEI-PUC-Minas-PMV-SI/pmv-si-2025-2-pe8-t2-si-eixo8-t2-g1/blob/main/Etapa3.md) |
-| Etapa 4 | [Apresentação do projeto](https://github.com/ICEI-PUC-Minas-PMV-SI/pmv-si-2025-2-pe8-t2-si-eixo8-t2-g1/blob/main/Etapa4.md) |
-| Etapa 5 | [Planejamento Estratégico de TI](https://github.com/ICEI-PUC-Minas-PMV-SI/pmv-si-2025-2-pe8-t2-si-eixo8-t2-g1/blob/main/Etapa5.md) |
 
