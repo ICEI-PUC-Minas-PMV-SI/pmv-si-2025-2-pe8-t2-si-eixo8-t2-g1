@@ -1,7 +1,7 @@
 {
   "$schema": "https://aka.ms/azure/static-web-apps-cli/schema",
   "configurations": {
-    "clinica-ana-eixo-8": {
+    "health-scheduler": {
       "appLocation": ".",
       "outputLocation": "dist",
       "appBuildCommand": "npm run build",

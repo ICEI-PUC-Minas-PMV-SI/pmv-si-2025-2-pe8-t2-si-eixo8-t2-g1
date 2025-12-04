@@ -21,12 +21,15 @@ import {
     emitirFaturamento,
     cancelarFaturamento
 } from "@/services/faturamentoService";
-import { FaturamentoDto, EnumStatusFaturamento } from "@/types/api";
+import { FaturamentoDto, EnumStatusFaturamento, Role } from "@/types/api";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMeuPerfil } from "@/services/profissionalService";
 
 const Faturamento = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [faturamentos, setFaturamentos] = useState<FaturamentoDto[]>([]);
     const [filtroData, setFiltroData] = useState<Date | undefined>();
     const [filtroStatus, setFiltroStatus] = useState<string>("todos");
@@ -43,16 +46,30 @@ const Faturamento = () => {
         try {
             setIsLoading(true);
 
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             if (!token) {
                 throw new Error('Usuário não autenticado. Faça login para acessar os faturamentos.');
             }
 
             const faturamentosData = await getFaturamentos();
+            let faturamentosFiltradosPorPerfil = Array.isArray(faturamentosData) ? faturamentosData : [];
 
-            setFaturamentos(Array.isArray(faturamentosData) ? faturamentosData : []);
+            if (user?.role === Role.Profissional) {
+                try {
+                    const meuPerfil = await getMeuPerfil();
+                    if (meuPerfil && meuPerfil.id) {
+                        faturamentosFiltradosPorPerfil = faturamentosFiltradosPorPerfil.filter(
+                            f => f.profissionalId === meuPerfil.id
+                        );
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar perfil do profissional:", error);
+                }
+            }
 
-            const statsCalculadas = calcularEstatisticas(faturamentosData || []);
+            setFaturamentos(faturamentosFiltradosPorPerfil);
+
+            const statsCalculadas = calcularEstatisticas(faturamentosFiltradosPorPerfil || []);
             setStats(statsCalculadas);
         } catch (error) {
             console.error('Erro ao carregar dados de faturamento:', error);

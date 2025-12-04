@@ -1,9 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7084';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const publicEndpoints = [
-  'api/Auth/login',
-  'api/Auth/register',
-  'api/Auth/email-reset-password',
+  'Auth/login',
+  'Auth/register',
+  'Auth/email-reset-password',
 ];
 
 async function client<T>(endpoint: string, {
@@ -12,7 +12,7 @@ async function client<T>(endpoint: string, {
   ...customConfig
 }: RequestInit & { data?: unknown } = {}): Promise<T> {
 
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const headers: HeadersInit = {
     'Content-Type': data ? 'application/json' : ''
   };
@@ -43,7 +43,12 @@ async function client<T>(endpoint: string, {
     return undefined as T;
   }
 
-  return await response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return await response.json();
+  }
+
+  return (await response.text()) as T;
 }
 
 export default client;

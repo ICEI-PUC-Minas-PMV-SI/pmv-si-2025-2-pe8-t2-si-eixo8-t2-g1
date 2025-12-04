@@ -2,7 +2,7 @@
 import type { AgendamentoDto } from '../types/api';
 import client from './apiClient';
 
-const API_PREFIX = 'api/Agendamento';
+const API_PREFIX = 'Agendamento';
 
 export const getAgendamentos = (): Promise<AgendamentoDto[]> => {
   return client<AgendamentoDto[]>(API_PREFIX, {});
@@ -33,5 +33,10 @@ export const getAgendamentosByPaciente = (
 export const getAgendamentosByProfissional = (
   profissionalId: string
 ): Promise<AgendamentoDto[]> => {
-  return client<AgendamentoDto[]>(`${API_PREFIX}/profissional/${profissionalId}`, {});
+  // Assuming the backend endpoint still uses 'profissional' in the URL, 
+  // but if the property changed, maybe the URL param name is just a value.
+  // The function argument name 'profissionalId' is fine, but let's check if the URL needs changing.
+  // The user only asked to change the property name in the DTO (for POST/PUT).
+  // I will keep the URL as is unless I see errors.
+  return client<AgendamentoDto[]>(`${API_PREFIX}/perfil/${profissionalId}`, {});
 };

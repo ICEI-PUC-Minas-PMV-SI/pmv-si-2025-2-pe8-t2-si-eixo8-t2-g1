@@ -1,7 +1,7 @@
 import client from './apiClient';
 import { FaturamentoDto, CriarFaturamentoDto, CriarFaturamentoAvulsoDto, EnumStatusFaturamento } from '@/types/api';
 
-const API_PREFIX = 'api/Faturamento';
+const API_PREFIX = 'Faturamento';
 
 export const getFaturamentos = (): Promise<FaturamentoDto[]> => {
     return client<FaturamentoDto[]>(API_PREFIX, {});
@@ -12,7 +12,7 @@ export const getFaturamentoById = (id: string): Promise<FaturamentoDto> => {
 };
 
 export const getFaturamentoPorProfissional = (profissionalId: string): Promise<FaturamentoDto[]> => {
-    return client<FaturamentoDto[]>(`${API_PREFIX}/profissional/${profissionalId}`, {});
+    return client<FaturamentoDto[]>(`${API_PREFIX}/perfil/${profissionalId}`, {});
 };
 
 export const getFaturamentoPorPeriodo = (dataInicio: string, dataFim: string): Promise<FaturamentoDto[]> => {
@@ -65,9 +65,12 @@ export const calcularEstatisticas = (faturamentos: FaturamentoDto[]) => {
         .filter(item => item.status === EnumStatusFaturamento.Rascunho)
         .reduce((acc, item) => acc + item.valorTotal, 0);
 
+    const taxaRecebimento = totalFaturado > 0 ? Math.round((totalPago / totalFaturado) * 100) : 0;
+
     return {
         totalFaturado,
         totalPago,
-        totalPendente
+        totalPendente,
+        taxaRecebimento
     };
 };

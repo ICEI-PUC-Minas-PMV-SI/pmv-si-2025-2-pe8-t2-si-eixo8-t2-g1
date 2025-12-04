@@ -7,14 +7,19 @@ export enum EnumTipoAtendimento {
   Reuniao,
 }
 
+export enum Role {
+  Gerencia = "ger",
+  Profissional = "pro",
+}
+
 export interface AgendamentoDto {
   id?: string;
-  dataHora: string;
-  tipoAtendimento: EnumTipoAtendimento;
+  dataHora?: string;
+  tipoAtendimento?: EnumTipoAtendimento;
   status?: string;
   observacoes?: string;
-  pacienteId: string;
-  profissionalId: string;
+  pacienteId?: string;
+  perfilId?: string;
 }
 
 export interface PacienteDto {
@@ -25,28 +30,39 @@ export interface PacienteDto {
   email?: string;
 }
 
-export interface ProfissionalDto {
+export interface PerfilDto {
   id?: string;
   nomeCompleto?: string;
+  tipo?: string;
   especialidade?: string;
   registroConselho?: string;
   userId?: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  role: Role;
+  especialidade?: string;
+}
+
 export interface UserDto {
   email?: string;
   password?: string;
+  role?: Role;
 }
 
-export interface RegisterProfissionalDto {
+export interface RegisterPerfilDto {
   email: string;
   password: string;
   nomeCompleto: string;
-  especialidade: string;
+  tipo: string;
+  especialidade?: string;
 }
 
 export interface TokenResponseDto {
   accessToken?: string;
+  user?: User;
 }
 
 export interface SendEmailResetPasswordDto {
@@ -87,6 +103,7 @@ export interface ItemFaturamentoDto {
   valorAtendimento: number;
   status: string;
   observacoes?: string;
+  itens?: any[];
 }
 
 export interface CriarFaturamentoAvulsoDto {

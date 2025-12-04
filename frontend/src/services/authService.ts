@@ -1,22 +1,17 @@
 
 import type {
   UserDto,
-  RegisterProfissionalDto,
+  RegisterPerfilDto,
   TokenResponseDto,
   SendEmailResetPasswordDto,
   ResetPasswordDto,
+  User,
 } from '../types/api';
 import client from './apiClient';
 
-const API_PREFIX = 'api/Auth';
+const API_PREFIX = 'Auth';
 
-export const register = (data: UserDto): Promise<boolean> => {
-  return client<boolean>(`${API_PREFIX}/register`, { data });
-};
 
-export const registerProfissional = (data: RegisterProfissionalDto): Promise<boolean> => {
-  return client<boolean>(`${API_PREFIX}/register-profissional`, { data });
-};
 
 export const registerUser = (data: UserDto): Promise<TokenResponseDto> => {
   return client<TokenResponseDto>(`${API_PREFIX}/register`, { data });
@@ -43,8 +38,8 @@ export const resetPassword = (
   });
 };
 
-export const getAuth = (): Promise<any> => {
-  return client<any>(API_PREFIX, {});
+export const getAuth = (): Promise<User> => {
+  return client<User>(API_PREFIX, {});
 };
 
 export const getAdminOnly = (): Promise<any> => {

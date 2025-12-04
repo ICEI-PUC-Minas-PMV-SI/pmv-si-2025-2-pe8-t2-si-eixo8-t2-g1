@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { generateEvolution } from "@/services/aiService";
 import Layout from "@/components/Layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { FileText, Upload, Sparkles, Calendar, User, Clock, Eye, Edit, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { getMeuPerfil } from "@/services/profissionalService";
 
 interface PendingDocument {
   id: string;
@@ -77,8 +79,25 @@ const Documentos = () => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [specialty, setSpecialty] = useState("Fisioterapeuta");
   const { toast } = useToast();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+
+  // Fetch professional profile to get specialty
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      try {
+        const profile = await getMeuPerfil();
+        if (profile.especialidade) {
+          setSpecialty(profile.especialidade);
+        }
+      } catch (error) {
+        console.error("Error fetching professional profile:", error);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   // Fetch documents from API (placeholder for now)
   useEffect(() => {
@@ -108,7 +127,7 @@ const Documentos = () => {
 
     // Filter by patient name
     if (searchTerm.trim()) {
-      filtered = filtered.filter(doc => 
+      filtered = filtered.filter(doc =>
         doc.patientName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -132,42 +151,21 @@ const Documentos = () => {
     }
 
     setIsGeneratingAI(true);
-    
+
     try {
-      // Simulate AI generation - in real implementation, this would call the AI service
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const aiGeneratedText = `
-EVOLUÇÃO CLÍNICA
+      const aiGeneratedText = await generateEvolution(evolutionText, specialty);
 
-Baseado nas palavras-chave fornecidas: "${evolutionText}"
-
-OBSERVAÇÕES DA SESSÃO:
-O paciente apresentou boa participação durante a sessão. Foram observados progressos significativos nas atividades propostas, demonstrando maior coordenação e precisão nos movimentos. A motivação manteve-se elevada ao longo do atendimento.
-
-OBJETIVOS TRABALHADOS:
-- Fortalecimento muscular
-- Coordenação motora
-- Equilíbrio postural
-- Funcionalidade nas atividades de vida diária
-
-RESPOSTA AO TRATAMENTO:
-Paciente respondeu positivamente às intervenções propostas, apresentando melhora gradual na execução das tarefas. Demonstrou compreensão das orientações e execução adequada dos exercícios.
-
-ORIENTAÇÕES:
-Continuidade do protocolo estabelecido com progressão gradual das atividades conforme tolerância e evolução apresentada.
-      `.trim();
-      
       setEvolutionText(aiGeneratedText);
-      
+
       toast({
         title: "Sucesso",
         description: "Evolução gerada com IA com sucesso!"
       });
     } catch (error) {
+      console.error("Erro ao gerar evolução com IA:", error);
       toast({
         title: "Erro",
-        description: "Erro ao gerar evolução com IA",
+        description: "Erro ao gerar evolução com IA. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -214,9 +212,9 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
     setSavedDocuments(prev => [...prev, newSavedDocument]);
 
     // Update document status
-    setPendingDocuments(prev => 
-      prev.map(doc => 
-        doc.id === selectedDocument.id 
+    setPendingDocuments(prev =>
+      prev.map(doc =>
+        doc.id === selectedDocument.id
           ? { ...doc, status: "completed" as const }
           : doc
       )
@@ -237,9 +235,9 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
   const handleEditSave = () => {
     if (!editDocument) return;
 
-    setSavedDocuments(prev => 
-      prev.map(doc => 
-        doc.id === editDocument.id 
+    setSavedDocuments(prev =>
+      prev.map(doc =>
+        doc.id === editDocument.id
           ? editDocument
           : doc
       )
@@ -306,8 +304,8 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                     {document.status === "pending" && (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="default" 
+                          <Button
+                            variant="default"
                             size="sm"
                             onClick={() => setSelectedDocument(document)}
                             className="w-full sm:w-auto"
@@ -321,13 +319,13 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                               Documento de Evolução - {document.patientName}
                             </DialogTitle>
                           </DialogHeader>
-                          
+
                           <Tabs defaultValue="evolution" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
                               <TabsTrigger value="evolution">Evolução</TabsTrigger>
                               <TabsTrigger value="attachments">Anexos</TabsTrigger>
                             </TabsList>
-                            
+
                             <TabsContent value="evolution" className="space-y-4">
                               <div className="grid gap-4">
                                 <div>
@@ -342,17 +340,17 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                                       className="flex-1"
                                     />
                                   </div>
-                                   <Button
-                                     variant="outline"
-                                     onClick={handleGenerateAIEvolution}
-                                     disabled={isGeneratingAI}
-                                     className="mt-2 w-full sm:w-auto"
-                                   >
-                                     <Sparkles className="h-4 w-4 mr-2" />
-                                     {isGeneratingAI ? "Gerando..." : "Gerar com IA"}
-                                   </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={handleGenerateAIEvolution}
+                                    disabled={isGeneratingAI}
+                                    className="mt-2 w-full sm:w-auto"
+                                  >
+                                    <Sparkles className="h-4 w-4 mr-2" />
+                                    {isGeneratingAI ? "Gerando..." : "Gerar com IA"}
+                                  </Button>
                                 </div>
-                                
+
                                 <div>
                                   <Label htmlFor="next-steps">Próximos Passos</Label>
                                   <Textarea
@@ -366,7 +364,7 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                                 </div>
                               </div>
                             </TabsContent>
-                            
+
                             <TabsContent value="attachments" className="space-y-4">
                               <div>
                                 <Label htmlFor="file-upload">Anexar Documento</Label>
@@ -387,16 +385,16 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                               </div>
                             </TabsContent>
                           </Tabs>
-                          
+
                           <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               onClick={() => setSelectedDocument(null)}
                               className="w-full sm:w-auto"
                             >
                               Cancelar
                             </Button>
-                            <Button 
+                            <Button
                               onClick={handleSaveDocument}
                               className="w-full sm:w-auto"
                             >
@@ -409,7 +407,7 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                   </div>
                 </div>
               ))}
-              
+
               {pendingDocuments.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   Nenhum documento pendente encontrado.
@@ -445,48 +443,48 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
                   </div>
                 ) : (
                   filteredAndSortedDocuments.map((document) => (
-                  <div
-                    key={document.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 gap-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1">
+                    <div
+                      key={document.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 gap-3"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium text-sm sm:text-base">{document.patientName}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>{document.appointmentDate}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            <span>{document.appointmentTime}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{document.appointmentType}</Badge>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium text-sm sm:text-base">{document.patientName}</span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{document.appointmentDate}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{document.appointmentTime}</span>
-                        </div>
-                        <Badge variant="outline" className="text-xs">{document.appointmentType}</Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewDocument(document)}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Visualizar
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setEditDocument(document)}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setViewDocument(document)}
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Visualizar
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setEditDocument(document)}
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                  </div>
                   ))
                 )}
               </div>
@@ -503,7 +501,7 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
               Visualizar Documento - {viewDocument?.patientName}
             </DialogTitle>
           </DialogHeader>
-          
+
           {viewDocument && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
@@ -569,7 +567,7 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
               Editar Documento - {editDocument?.patientName}
             </DialogTitle>
           </DialogHeader>
-          
+
           {editDocument && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
@@ -610,14 +608,14 @@ Continuidade do protocolo estabelecido com progressão gradual das atividades co
               </div>
 
               <div className="flex flex-col sm:flex-row justify-end gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setEditDocument(null)}
                   className="w-full sm:w-auto"
                 >
                   Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={handleEditSave}
                   className="w-full sm:w-auto"
                 >

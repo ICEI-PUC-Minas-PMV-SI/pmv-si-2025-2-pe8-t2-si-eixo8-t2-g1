@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format } from "date-fns";
 import Layout from "@/components/Layout/Layout";
 import CalendarView from "@/components/Scheduler/CalendarView";
 import { Button } from "@/components/ui/button";
@@ -28,14 +29,16 @@ import {
   createAgendamento,
   updateAgendamento,
   getAgendamentoById,
+  getAgendamentosByProfissional,
 } from "@/services/agendamentoService";
 import { getPacientes } from "@/services/pacienteService";
-import { getProfissionais } from "@/services/profissionalService";
-import { AgendamentoDto, PacienteDto, ProfissionalDto, EnumTipoAtendimento } from "@/types/api";
+import { getPerfis, getMeuPerfil } from "@/services/profissionalService";
+import { AgendamentoDto, PacienteDto, PerfilDto, EnumTipoAtendimento, Role } from "@/types/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const agendamentoSchema = z.object({
   pacienteId: z.string().nonempty({ message: "Paciente é obrigatório" }),
-  profissionalId: z.string().nonempty({ message: "Profissional é obrigatório" }),
+  perfilId: z.string().nonempty({ message: "Profissional é obrigatório" }),
   dataHora: z.string().nonempty({ message: "Data e hora são obrigatórios" }),
   tipoAtendimento: z.nativeEnum(EnumTipoAtendimento),
   observacoes: z.string().optional(),
@@ -48,9 +51,10 @@ const Agendamento = () => {
   const [dialogType, setDialogType] = useState<"new" | "edit">("new");
   const [agendamentos, setAgendamentos] = useState<AgendamentoDto[]>([]);
   const [pacientes, setPacientes] = useState<PacienteDto[]>([]);
-  const [profissionais, setProfissionais] = useState<ProfissionalDto[]>([]);
+  const [profissionais, setProfissionais] = useState<PerfilDto[]>([]);
   const [selectedAgendamento, setSelectedAgendamento] = useState<AgendamentoDto | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const {
     register,
@@ -62,59 +66,96 @@ const Agendamento = () => {
     resolver: zodResolver(agendamentoSchema),
   });
 
-  const fetchData = async () => {
-    try {
-      const [agendamentosData, pacientesData, profissionaisData] = await Promise.all([
-        getAgendamentos(),
-        getPacientes(),
-        getProfissionais(),
-      ]);
-      setAgendamentos(agendamentosData);
-      setPacientes(pacientesData);
-      setProfissionais(profissionaisData);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao buscar dados",
-        description: "Não foi possível buscar os dados necessários para a página.",
-      });
-    }
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!user) return;
+
+        const [pacientesData, allProfissionais] = await Promise.all([
+          getPacientes(),
+          getPerfis()
+        ]);
+
+        setPacientes(pacientesData);
+
+        // Filter out managers, keep only professionals
+        const filteredProfissionais = allProfissionais.filter(p => p.tipo !== 'ger');
+        setProfissionais(filteredProfissionais);
+
+        if (user.role === Role.Gerencia) {
+          const agendamentosData = await getAgendamentos();
+          setAgendamentos(agendamentosData);
+        } else {
+          const profissional = await getMeuPerfil();
+          if (profissional) {
+            const agendamentosData = await getAgendamentosByProfissional(profissional.id!);
+            setAgendamentos(agendamentosData);
+            // Pre-select the current professional, but allow changing
+            setValue("perfilId", profissional.id!);
+          }
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao buscar dados",
+          description: "Não foi possível buscar os dados necessários para a página.",
+        });
+      }
+    };
+
     fetchData();
-  }, []);
+  }, [user, toast, setValue]);
 
   const handleAppointmentClick = async (appointmentId: string | null, date: Date) => {
     if (appointmentId) {
       try {
         const agendamento = await getAgendamentoById(appointmentId);
+        const formattedDate = format(new Date(agendamento.dataHora), "yyyy-MM-dd'T'HH:mm");
         setSelectedAgendamento(agendamento);
         setDialogType("edit");
-        reset(agendamento);
+        reset({ ...agendamento, dataHora: formattedDate });
         setIsDialogOpen(true);
       } catch (error) {
         toast({ variant: "destructive", title: "Erro", description: "Agendamento não encontrado" });
       }
     } else {
+      const formattedDate = format(date, "yyyy-MM-dd'T'HH:mm");
       setDialogType("new");
       setSelectedAgendamento(null);
-      reset({ pacienteId: '', profissionalId: '', dataHora: date.toISOString(), tipoAtendimento: EnumTipoAtendimento.CONSULTA, observacoes: '' });
+
+      let defaultProfId = '';
+      if (user?.role === Role.Profissional) {
+        const currentPro = profissionais.find(p => p.userId === user.id);
+        defaultProfId = currentPro?.id || '';
+      }
+
+      reset({
+        pacienteId: '',
+        perfilId: defaultProfId,
+        dataHora: formattedDate,
+        tipoAtendimento: EnumTipoAtendimento.AtendimentoExterno,
+        observacoes: ''
+      });
       setIsDialogOpen(true);
     }
   };
-  
+
   const onSubmit = async (data: AgendamentoFormData) => {
     try {
+      const utcDate = new Date(data.dataHora).toISOString();
+      const dataWithUtcDate = { ...data, dataHora: utcDate };
+
       if (dialogType === "new") {
-        await createAgendamento(data);
+        console.log("Creating appointment (Agendamento page) with data:", dataWithUtcDate);
+        await createAgendamento(dataWithUtcDate);
         toast({ title: "Agendamento criado com sucesso" });
       } else if (selectedAgendamento) {
-        await updateAgendamento({ ...selectedAgendamento, ...data });
+        console.log("Updating appointment (Agendamento page) with data:", { ...selectedAgendamento, ...dataWithUtcDate });
+        await updateAgendamento({ ...selectedAgendamento, ...dataWithUtcDate });
         toast({ title: "Agendamento atualizado com sucesso" });
       }
       setIsDialogOpen(false);
-      fetchData();
+      // fetchData();
     } catch (error) {
       toast({
         variant: "destructive",
@@ -136,12 +177,13 @@ const Agendamento = () => {
         </Button>
       </div>
 
-      <CalendarView 
+      <CalendarView
         appointments={agendamentos}
         professionals={profissionais}
-        onAppointmentClick={handleAppointmentClick} 
+        pacientes={pacientes}
+        onAppointmentClick={handleAppointmentClick}
       />
-      
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
@@ -149,12 +191,12 @@ const Agendamento = () => {
               {dialogType === "new" ? "Novo Agendamento" : "Editar Agendamento"}
             </DialogTitle>
             <DialogDescription>
-              {dialogType === "new" 
-                ? "Preencha os dados para criar um novo agendamento" 
+              {dialogType === "new"
+                ? "Preencha os dados para criar um novo agendamento"
                 : "Modifique os dados do agendamento existente"}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
             <div className="grid grid-cols-1 gap-2">
               <label htmlFor="pacienteId" className="text-sm font-medium">Paciente</label>
@@ -166,18 +208,18 @@ const Agendamento = () => {
               </Select>
               {errors.pacienteId && <p className="text-destructive">{errors.pacienteId.message}</p>}
             </div>
-            
+
             <div className="grid grid-cols-1 gap-2">
-              <label htmlFor="profissionalId" className="text-sm font-medium">Profissional</label>
-              <Select onValueChange={(value) => setValue('profissionalId', value)} defaultValue={selectedAgendamento?.profissionalId}>
+              <label htmlFor="perfilId" className="text-sm font-medium">Profissional</label>
+              <Select onValueChange={(value) => setValue('perfilId', value)} defaultValue={selectedAgendamento?.perfilId}>
                 <SelectTrigger><SelectValue placeholder="Selecione o profissional" /></SelectTrigger>
                 <SelectContent>
                   {profissionais.map(p => <SelectItem key={p.id} value={p.id!}>{p.nomeCompleto}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {errors.profissionalId && <p className="text-destructive">{errors.profissionalId.message}</p>}
+              {errors.perfilId && <p className="text-destructive">{errors.perfilId.message}</p>}
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid grid-cols-1 gap-2">
                 <label className="text-sm font-medium">Data</label>
@@ -195,12 +237,12 @@ const Agendamento = () => {
                 {errors.tipoAtendimento && <p className="text-destructive">{errors.tipoAtendimento.message}</p>}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 gap-2">
               <label className="text-sm font-medium">Observações</label>
               <Textarea placeholder="Adicione informações importantes sobre o agendamento" {...register("observacoes")} />
             </div>
-          
+
             <DialogFooter>
               {dialogType === "edit" && (
                 <Button variant="outline" className="mr-auto">Cancelar Agendamento</Button>

@@ -12,19 +12,19 @@ public class Agendamento : BaseEntity
     // --- Chaves Estrangeiras ---
     public Guid PacienteId { get; set; }
     public virtual Paciente Paciente { get; set; } = null!;
-    public Guid ProfissionalId { get; set; }
-    public virtual Profissional Profissional { get; set; } = null!;
+    public Guid PerfilId { get; set; }
+    public virtual Perfil Perfil { get; set; } = null!;
 
     // Construtor atualizado
     public Agendamento(DateTime dataHora,
                        EnumTipoAtendimento tipoAtendimento, string status,
-                       Guid pacienteId, Guid profissionalId, string observacoes)
+                       Guid pacienteId, Guid perfilId, string observacoes)
     {
         DataHora = dataHora;
         TipoAtendimento = tipoAtendimento;
         Status = status;
         PacienteId = pacienteId;
-        ProfissionalId = profissionalId;
+        PerfilId = perfilId;
         Observacoes = observacoes;
         AtualizarDataAlteracao();
     }

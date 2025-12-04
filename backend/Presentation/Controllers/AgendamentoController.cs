@@ -7,8 +7,8 @@ using System.Net;
 
 namespace Presentation.Controllers;
 
-[Authorize(Roles = $"{Roles.ROLE_PROFISSIONAL},{Roles.ROLE_GERENCIAL}")]
-[Route("api/[controller]")]
+[Authorize(Policy = "ProOrGer")]
+[Route("[controller]")]
 [ApiController]
 public class AgendamentoController : ControllerBase
 {
@@ -65,12 +65,12 @@ public class AgendamentoController : ControllerBase
         }
     }
 
-    [HttpGet("profissional/{profissionalId}")]
-    public async Task<ActionResult> BuscarPorProfissionalId(Guid profissionalId)
+    [HttpGet("perfil/{perfilId}")]
+    public async Task<ActionResult> BuscarPorPerfilId(Guid perfilId)
     {
         try
         {
-            return Ok(await _agendamentoService.GetByProfissionalId(profissionalId));
+            return Ok(await _agendamentoService.GetByPerfilId(perfilId));
         }
         catch (ArgumentException e)
         {
@@ -79,6 +79,7 @@ public class AgendamentoController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "GerOnly")]
     public async Task<ActionResult> CreateAgendamento([FromBody] AgendamentoDto agendamento)
     {
         if (!ModelState.IsValid)

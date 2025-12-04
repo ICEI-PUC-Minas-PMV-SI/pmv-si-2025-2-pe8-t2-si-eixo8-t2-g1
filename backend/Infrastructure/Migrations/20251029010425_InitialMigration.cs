@@ -68,7 +68,7 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Profissional",
+                name: "Perfil",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -100,7 +100,7 @@ namespace Infrastructure.Migrations
                     Status = table.Column<string>(type: "text", nullable: false),
                     Observacoes = table.Column<string>(type: "text", nullable: false),
                     PacienteId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProfissionalId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PerfilId = table.Column<Guid>(type: "uuid", nullable: false),
                     DataCriacao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DataAlteracao = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -114,9 +114,9 @@ namespace Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Agendamento_Profissional_ProfissionalId",
-                        column: x => x.ProfissionalId,
-                        principalTable: "Profissional",
+                        name: "FK_Agendamento_Profissional_PerfilId",
+                        column: x => x.PerfilId,
+                        principalTable: "Perfil",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -127,9 +127,9 @@ namespace Infrastructure.Migrations
                 column: "PacienteId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Agendamento_ProfissionalId",
+                name: "IX_Agendamento_PerfilId",
                 table: "Agendamento",
-                column: "ProfissionalId");
+                column: "PerfilId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documento_PacienteId",
@@ -138,7 +138,7 @@ namespace Infrastructure.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Profissional_UserId",
-                table: "Profissional",
+                table: "Perfil",
                 column: "UserId",
                 unique: true);
         }
@@ -153,7 +153,7 @@ namespace Infrastructure.Migrations
                 name: "Documento");
 
             migrationBuilder.DropTable(
-                name: "Profissional");
+                name: "Perfil");
 
             migrationBuilder.DropTable(
                 name: "Paciente");

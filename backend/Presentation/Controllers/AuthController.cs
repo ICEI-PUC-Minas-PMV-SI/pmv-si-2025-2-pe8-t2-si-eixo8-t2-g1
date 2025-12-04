@@ -1,27 +1,45 @@
 using Domain.Dtos.Auth;
 using Domain.Interfaces.Services;
-using Domain.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace Presentation.Controllers;
 
-[Route("api/[controller]")]
+[Route("[controller]")]
 [ApiController]
 public class AuthController(IAuthService authService) : ControllerBase
 {
+    /// <summary>
+    /// Register a new user and return JWT token (same as login) on success.
+    /// </summary>
+    /// <param name="request">User information to register.</param>
     [HttpPost("register")]
-    public async Task<ActionResult<bool>> Register(UserDto request)
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<TokenResponseDto>> Register(UserDto request)
     {
         var result = await authService.RegisterAsync(request);
         if (!result)
             return BadRequest("Email already exists.");
 
-        return Created();
+        // After successful registration, immediately authenticate to return a token
+        var tokenResponse = await authService.LoginAsync(request);
+        if (tokenResponse is null)
+            return StatusCode(StatusCodes.Status500InternalServerError, "Failed to generate token after registration.");
+
+        return Ok(tokenResponse);
     }
 
+    /// <summary>
+    /// Authenticate user and return JWT token.
+    /// </summary>
+    /// <param name="request">User credentials.</param>
     [HttpPost("login")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
     {
         var result = await authService.LoginAsync(request);
@@ -31,22 +49,41 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Send an email containing a password reset token.
+    /// </summary>
+    /// <param name="request">Object containing the email to send to.</param>
     [HttpPost("email-reset-password")]
-    public async Task<ActionResult<string>> SendEmailResetPassword(SendEmailResetPasswordDto request)
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(SendEmailResetPasswordResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<SendEmailResetPasswordResponseDto>> SendEmailResetPassword(SendEmailResetPasswordDto request)
     {
-
         var result = await authService.SendEmailResetPassword(request.Email);
         if (result is null)
             return BadRequest("Invalid email.");
 
-        return Ok(new { Token = result, Mensagem = "Email sent. You have 15 minutes to reset your password." });
+        var response = new SendEmailResetPasswordResponseDto
+        {
+            Token = result,
+            Message = "Email sent. You have 15 minutes to reset your password."
+        };
+
+        return Ok(response);
     }
 
-    [Authorize(Roles = Roles.ROLE_RST_PSWD)]
+    /// <summary>
+    /// Reset password using the token previously issued.
+    /// </summary>
+    /// <param name="request">New password.</param>
+    /// <param name="authorization">Authorization header containing the reset-role token.</param>
+    [Authorize(Policy = "ResetPasswordRole")]
     [HttpPatch("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordDto request, [FromHeader(Name = "Authorization")] string authorization)
     {
-
         var result = await authService.ResetPasswordAsync(authorization, request.Password);
         if (result is null)
             return BadRequest("Cant find user");
@@ -54,30 +91,27 @@ public class AuthController(IAuthService authService) : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Roles = Roles.ROLE_PROFISSIONAL)]
-    [HttpPost("change-password")]
-    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordDto request)
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            return Unauthorized("User ID not found in token");
-        }
-
-        var ok = await authService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
-        if (!ok) return BadRequest("Senha atual inválida");
-        return NoContent();
-    }
-
-[Authorize(Roles = Roles.ROLE_PROFISSIONAL)]
+    /// <summary>
+    /// Endpoint for authenticated professionals.
+    /// </summary>
+    [Authorize(Policy = "LoggedUser")]
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult AuthenticatedOnlyEndpoint()
     {
         return Ok("You are authenticated!");
     }
 
-    [Authorize(Roles = Roles.ROLE_GERENCIAL)]
+    /// <summary>
+    /// Endpoint for managerial users.
+    /// </summary>
+    [Authorize(Policy = "GerOnly")]
     [HttpGet("admin-only")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult AdminOnlyEndpoint()
     {
         return Ok("You are and admin!");

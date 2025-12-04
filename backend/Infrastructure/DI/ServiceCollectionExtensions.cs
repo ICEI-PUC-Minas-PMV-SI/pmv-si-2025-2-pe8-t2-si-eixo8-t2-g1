@@ -22,7 +22,7 @@ public static class ServiceCollectionExtensions
             options.UseNpgsql(connectionString));
         services.AddDbContext<UserContext>(options =>
             options.UseNpgsql(connectionString));
-        services.AddDbContext<ProfissionalContext>(options =>
+        services.AddDbContext<PerfilContext>(options =>
             options.UseNpgsql(connectionString));
         services.AddDbContext<FaturamentoContext>(options =>
             options.UseNpgsql(connectionString));

@@ -44,7 +44,7 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("PacienteId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ProfissionalId")
+                    b.Property<Guid>("PerfilId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
@@ -58,7 +58,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("PacienteId");
 
-                    b.HasIndex("ProfissionalId");
+                    b.HasIndex("PerfilId");
 
                     b.ToTable("Agendamento");
                 });
@@ -127,7 +127,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Paciente");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Profissional", b =>
+            modelBuilder.Entity("Domain.Entity.Perfil", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -158,7 +158,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Profissional");
+                    b.ToTable("Perfil");
                 });
 
             modelBuilder.Entity("Domain.Entity.User", b =>
@@ -198,15 +198,15 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entity.Profissional", "Profissional")
+                    b.HasOne("Domain.Entity.Perfil", "Perfil")
                         .WithMany("Agendamentos")
-                        .HasForeignKey("ProfissionalId")
+                        .HasForeignKey("PerfilId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Paciente");
 
-                    b.Navigation("Profissional");
+                    b.Navigation("Perfil");
                 });
 
             modelBuilder.Entity("Domain.Entity.Documento", b =>
@@ -220,11 +220,11 @@ namespace Infrastructure.Migrations
                     b.Navigation("Paciente");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Profissional", b =>
+            modelBuilder.Entity("Domain.Entity.Perfil", b =>
                 {
                     b.HasOne("Domain.Entity.User", "User")
-                        .WithOne("Profissional")
-                        .HasForeignKey("Domain.Entity.Profissional", "UserId")
+                        .WithOne("Perfil")
+                        .HasForeignKey("Domain.Entity.Perfil", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -238,14 +238,14 @@ namespace Infrastructure.Migrations
                     b.Navigation("Documentos");
                 });
 
-            modelBuilder.Entity("Domain.Entity.Profissional", b =>
+            modelBuilder.Entity("Domain.Entity.Perfil", b =>
                 {
                     b.Navigation("Agendamentos");
                 });
 
             modelBuilder.Entity("Domain.Entity.User", b =>
                 {
-                    b.Navigation("Profissional");
+                    b.Navigation("Perfil");
                 });
 #pragma warning restore 612, 618
         }

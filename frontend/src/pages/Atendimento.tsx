@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout/Layout";
 import {
   Table,
@@ -28,61 +28,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Role, PerfilDto, PacienteDto, AgendamentoDto, EnumTipoAtendimento } from "@/types/api";
+import { getPerfis, getMeuPerfil } from "@/services/profissionalService";
+import { getPacientes } from "@/services/pacienteService";
+import { getAgendamentos, createAgendamento, updateAgendamento } from "@/services/agendamentoService";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-type Appointment = {
-  id: number;
-  time: string;
-  patientName: string;
-  local: string;
-  tipoAtendimento: string;
-  status: "Agendado" | "Chegou" | "Em Atendimento" | "Finalizado" | "Faltou" | "Desmarcado" | "Atendido";
-};
-
-const appointments: Appointment[] = [
-  {
-    id: 1,
-    time: "09:00",
-    patientName: "Ana Silva",
-    local: "Consultório 1",
-    tipoAtendimento: "Psicologia",
-    status: "Agendado"
-  },
-  {
-    id: 2,
-    time: "10:00",
-    patientName: "Roberto Ferreira",
-    local: "Consultório 2",
-    tipoAtendimento: "Fisioterapia",
-    status: "Chegou"
-  },
-  {
-    id: 3,
-    time: "11:00",
-    patientName: "Juliana Martins",
-    local: "Consultório 1",
-    tipoAtendimento: "Psicologia",
-    status: "Em Atendimento"
-  },
-  {
-    id: 4,
-    time: "13:30",
-    patientName: "Pedro Costa",
-    local: "Consultório 3",
-    tipoAtendimento: "Nutrição",
-    status: "Agendado"
-  },
-  {
-    id: 5,
-    time: "15:00",
-    patientName: "Maria Souza",
-    local: "Consultório 1",
-    tipoAtendimento: "Psicologia",
-    status: "Agendado"
-  }
-];
-
-const getStatusBadge = (status: Appointment["status"]) => {
+const getStatusBadge = (status: string | undefined) => {
   switch (status) {
     case "Agendado":
       return <Badge variant="outline" className="bg-clinic-blue/10 text-clinic-blue dark:bg-clinic-blue/20 hover:bg-clinic-blue/10">Agendado</Badge>;
@@ -99,21 +55,153 @@ const getStatusBadge = (status: Appointment["status"]) => {
     case "Desmarcado":
       return <Badge variant="outline" className="bg-muted text-muted-foreground hover:bg-muted">Desmarcado</Badge>;
     default:
-      return <Badge variant="outline">Desconhecido</Badge>;
+      return <Badge variant="outline">{status || "Desconhecido"}</Badge>;
+  }
+};
+
+const getTipoAtendimentoLabel = (tipo: EnumTipoAtendimento | undefined) => {
+  switch (tipo) {
+    case EnumTipoAtendimento.Visita: return "Visita";
+    case EnumTipoAtendimento.Anamnese: return "Anamnese";
+    case EnumTipoAtendimento.AtendimentoExterno: return "Atendimento Externo";
+    case EnumTipoAtendimento.SessaoTerapia: return "Sessão Terapia";
+    case EnumTipoAtendimento.Reuniao: return "Reunião";
+    default: return "Outro";
   }
 };
 
 const Atendimento = () => {
-  const [selectedAppointments, setSelectedAppointments] = useState<number[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [appointmentsList, setAppointmentsList] = useState<AgendamentoDto[]>([]);
+  const [profissionais, setProfissionais] = useState<PerfilDto[]>([]);
+  const [pacientes, setPacientes] = useState<PacienteDto[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [loading, setLoading] = useState(false);
+  const [meuPerfil, setMeuPerfil] = useState<PerfilDto | null>(null);
+
+  // New Appointment State
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [newAppointment, setNewAppointment] = useState<{
+    patientId: string;
+    perfilId: string;
+    time: string;
+    tipoAtendimento: string;
+    local: string;
+  }>({
+    patientId: "",
+    perfilId: "",
+    time: "",
+    tipoAtendimento: EnumTipoAtendimento.SessaoTerapia.toString(),
+    local: "Consultório 1"
+  });
+
+  // Batch Action State
+  const [selectedAppointments, setSelectedAppointments] = useState<string[]>([]);
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [batchAction, setBatchAction] = useState<string>("");
   const [batchReason, setBatchReason] = useState<string>("");
   const [batchNotes, setBatchNotes] = useState<string>("");
-  const [appointmentStatuses, setAppointmentStatuses] = useState<Record<number, Appointment["status"]>>(
-    appointments.reduce((acc, apt) => ({ ...acc, [apt.id]: apt.status }), {})
-  );
 
-  const handleCheckboxChange = (appointmentId: number, checked: boolean) => {
+  const fetchAppointments = async () => {
+    try {
+      const data = await getAgendamentos();
+      setAppointmentsList(data);
+    } catch (error) {
+      console.error("Erro ao buscar agendamentos:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao buscar agendamentos."
+      });
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const pacientesData = await getPacientes();
+        setPacientes(pacientesData);
+
+        if (user?.role === Role.Gerencia) {
+          const profissionaisData = await getPerfis();
+          const filteredProfissionais = profissionaisData.filter(p => p.tipo !== 'ger');
+          setProfissionais(filteredProfissionais);
+        } else if (user?.role === Role.Profissional) {
+          const perfil = await getMeuPerfil();
+          setMeuPerfil(perfil);
+        }
+
+        await fetchAppointments();
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao carregar dados iniciais."
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [user, toast]);
+
+  const handleCreateAppointment = async () => {
+    try {
+      if (user?.role === Role.Gerencia && !newAppointment.perfilId) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Selecione um profissional."
+        });
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const dataHora = `${today}T${newAppointment.time}:00Z`;
+
+      const agendamento: AgendamentoDto = {
+        pacienteId: newAppointment.patientId,
+        perfilId: newAppointment.perfilId || meuPerfil?.id,
+        dataHora: dataHora,
+        tipoAtendimento: parseInt(newAppointment.tipoAtendimento) as EnumTipoAtendimento,
+        status: "Agendado",
+        observacoes: newAppointment.local // Using observacoes for local for now
+      };
+
+      console.log("Creating appointment with data:", agendamento);
+      await createAgendamento(agendamento);
+
+      setIsNewAppointmentOpen(false);
+      setNewAppointment({
+        patientId: "",
+        perfilId: "",
+        time: "",
+        tipoAtendimento: EnumTipoAtendimento.SessaoTerapia.toString(),
+        local: "Consultório 1"
+      });
+      toast({ title: "Atendimento criado com sucesso!" });
+      fetchAppointments();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao criar atendimento."
+      });
+    }
+  };
+
+  const filteredAppointments = appointmentsList.filter(apt => {
+    if (user?.role === Role.Gerencia) return true;
+    if (user?.role === Role.Profissional && meuPerfil) {
+      return !apt.perfilId || apt.perfilId === meuPerfil.id;
+    }
+    return true;
+  });
+
+  const handleCheckboxChange = (appointmentId: string, checked: boolean) => {
     if (checked) {
       setSelectedAppointments(prev => [...prev, appointmentId]);
     } else {
@@ -125,36 +213,81 @@ const Atendimento = () => {
     setShowBatchDialog(true);
   };
 
-  const handleBatchSubmit = () => {
-    const newStatuses = { ...appointmentStatuses };
-    
-    selectedAppointments.forEach(id => {
-      if (batchAction === "Atendido") {
-        newStatuses[id] = "Atendido";
-      } else if (batchAction === "Desmarcado") {
-        newStatuses[id] = "Desmarcado";
-      } else if (batchAction === "Falta") {
-        newStatuses[id] = "Faltou";
-      }
-    });
+  const handleBatchSubmit = async () => {
+    try {
+      const promises = selectedAppointments.map(async (id) => {
+        const appointment = appointmentsList.find(a => a.id === id);
+        if (appointment) {
+          let newStatus = appointment.status;
+          let observacoes = appointment.observacoes;
 
-    setAppointmentStatuses(newStatuses);
-    setSelectedAppointments([]);
-    setShowBatchDialog(false);
-    setBatchAction("");
-    setBatchReason("");
-    setBatchNotes("");
+          if (batchAction === "Atendido") {
+            newStatus = "Atendido";
+          } else if (batchAction === "Desmarcado") {
+            newStatus = "Desmarcado";
+            observacoes = `${observacoes || ''} | Motivo: ${batchReason} ${batchNotes ? '- ' + batchNotes : ''}`;
+          } else if (batchAction === "Falta") {
+            newStatus = "Faltou";
+            observacoes = `${observacoes || ''} | Motivo: ${batchReason} ${batchNotes ? '- ' + batchNotes : ''}`;
+          }
+
+          return updateAgendamento({
+            ...appointment,
+            status: newStatus,
+            observacoes: observacoes
+          });
+        }
+        return Promise.resolve();
+      });
+
+      await Promise.all(promises);
+
+      setSelectedAppointments([]);
+      setShowBatchDialog(false);
+      setBatchAction("");
+      setBatchReason("");
+      setBatchNotes("");
+      toast({ title: "Atendimentos atualizados com sucesso!" });
+      fetchAppointments();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar atendimentos."
+      });
+    }
   };
 
   const getSelectedAppointments = () => {
-    return appointments.filter(apt => selectedAppointments.includes(apt.id));
+    return appointmentsList.filter(apt => apt.id && selectedAppointments.includes(apt.id));
+  };
+
+  const getPatientName = (id: string | undefined) => {
+    if (!id) return "Desconhecido";
+    const patient = pacientes.find(p => p.id === id);
+    return patient ? patient.nomeCompleto : "Desconhecido";
+  };
+
+  const formatTime = (dataHora: string | undefined) => {
+    if (!dataHora) return "--:--";
+    try {
+      return new Date(dataHora).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return dataHora;
+    }
   };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Atendimento</h1>
-        <p className="text-sm text-muted-foreground">Gerenciamento dos atendimentos do dia</p>
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Atendimento</h1>
+          <p className="text-sm text-muted-foreground">Gerenciamento dos atendimentos do dia</p>
+        </div>
+        <Button onClick={() => setIsNewAppointmentOpen(true)} className="bg-primary">
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Atendimento
+        </Button>
       </div>
 
       <div className="grid gap-6">
@@ -163,47 +296,54 @@ const Atendimento = () => {
             <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-clinic-teal" />
             <h2 className="text-sm sm:text-base font-semibold">Atendimentos de Hoje</h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead className="w-[80px] sm:w-[100px] text-xs sm:text-sm">Horário</TableHead>
-                <TableHead className="text-xs sm:text-sm">Paciente</TableHead>
-                <TableHead className="text-xs sm:text-sm">Local</TableHead>
-                <TableHead className="text-xs sm:text-sm">Tipo de Atendimento</TableHead>
-                <TableHead className="text-xs sm:text-sm">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {appointments.map((appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell>
-                    <Checkbox 
-                      checked={selectedAppointments.includes(appointment.id)}
-                      onCheckedChange={(checked) => handleCheckboxChange(appointment.id, checked as boolean)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium text-xs sm:text-sm">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                      {appointment.time}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs sm:text-sm">{appointment.patientName}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{appointment.local}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{appointment.tipoAtendimento}</TableCell>
-                  <TableCell>{getStatusBadge(appointmentStatuses[appointment.id] || appointment.status)}</TableCell>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[80px] sm:w-[100px] text-xs sm:text-sm">Horário</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Paciente</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Local</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Tipo de Atendimento</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredAppointments.map((appointment) => (
+                  <TableRow key={appointment.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={appointment.id ? selectedAppointments.includes(appointment.id) : false}
+                        onCheckedChange={(checked) => appointment.id && handleCheckboxChange(appointment.id, checked as boolean)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium text-xs sm:text-sm">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                        {formatTime(appointment.dataHora)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">{getPatientName(appointment.pacienteId)}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">{appointment.observacoes || "Consultório 1"}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">{getTipoAtendimentoLabel(appointment.tipoAtendimento)}</TableCell>
+                    <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                  </TableRow>
+                ))}
+                {filteredAppointments.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                      Nenhum atendimento encontrado.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
 
         <div className="flex justify-end">
-          <Button 
+          <Button
             onClick={handleFinalizarClick}
             disabled={selectedAppointments.length === 0}
             className="bg-clinic-teal hover:bg-clinic-teal/90 w-full sm:w-auto"
@@ -212,7 +352,7 @@ const Atendimento = () => {
           </Button>
         </div>
       </div>
-      
+
       <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -221,7 +361,7 @@ const Atendimento = () => {
               Selecione a ação para os atendimentos selecionados
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4 space-y-4">
             <Card>
               <CardHeader>
@@ -231,8 +371,8 @@ const Atendimento = () => {
                 <div className="space-y-2">
                   {getSelectedAppointments().map(apt => (
                     <div key={apt.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                      <span className="font-medium">{apt.patientName}</span>
-                      <span className="text-sm text-muted-foreground">{apt.time}</span>
+                      <span className="font-medium">{getPatientName(apt.pacienteId)}</span>
+                      <span className="text-sm text-muted-foreground">{formatTime(apt.dataHora)}</span>
                     </div>
                   ))}
                 </div>
@@ -281,22 +421,101 @@ const Atendimento = () => {
               </div>
             )}
           </div>
-          
+
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowBatchDialog(false)}
               className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleBatchSubmit}
               disabled={!batchAction || ((batchAction === "Desmarcado" || batchAction === "Falta") && !batchReason)}
               className="w-full sm:w-auto"
             >
               Confirmar
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Atendimento</DialogTitle>
+            <DialogDescription>Preencha os dados do novo atendimento.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="patient">Paciente</Label>
+              <Select
+                value={newAppointment.patientId}
+                onValueChange={(val) => setNewAppointment({ ...newAppointment, patientId: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o paciente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pacientes.map(p => (
+                    <SelectItem key={p.id} value={p.id!}>{p.nomeCompleto}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {user?.role === Role.Gerencia && (
+              <div className="grid gap-2">
+                <Label htmlFor="professional">Profissional</Label>
+                <Select
+                  value={newAppointment.perfilId}
+                  onValueChange={(val) => setNewAppointment({ ...newAppointment, perfilId: val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profissionais.map(p => (
+                      <SelectItem key={p.id} value={p.id!}>{p.nomeCompleto}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="time">Horário</Label>
+              <Input
+                id="time"
+                type="time"
+                value={newAppointment.time}
+                onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="type">Tipo</Label>
+              <Select
+                value={newAppointment.tipoAtendimento}
+                onValueChange={(val) => setNewAppointment({ ...newAppointment, tipoAtendimento: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EnumTipoAtendimento.SessaoTerapia.toString()}>Sessão Terapia</SelectItem>
+                  <SelectItem value={EnumTipoAtendimento.Visita.toString()}>Visita</SelectItem>
+                  <SelectItem value={EnumTipoAtendimento.Anamnese.toString()}>Anamnese</SelectItem>
+                  <SelectItem value={EnumTipoAtendimento.AtendimentoExterno.toString()}>Atendimento Externo</SelectItem>
+                  <SelectItem value={EnumTipoAtendimento.Reuniao.toString()}>Reunião</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewAppointmentOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateAppointment}>Criar Atendimento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

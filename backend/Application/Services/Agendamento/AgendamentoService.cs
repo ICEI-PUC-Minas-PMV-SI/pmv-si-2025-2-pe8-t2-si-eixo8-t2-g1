@@ -4,18 +4,21 @@ using Domain.Dtos.Agendamento;
 using Domain.Interfaces.Services;
 using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
+using Domain.Utils;
+using System;
+using System.Linq;
 
 namespace Application.Services.Agendamento;
 
 public class AgendamentoService : IAgendamentoService
 {
     private readonly AgendamentoContext _context;
-    private readonly ProfissionalContext _profissionalContext;
+    private readonly PerfilContext _perfilContext;
 
-    public AgendamentoService(AgendamentoContext context, ProfissionalContext profissionalContext)
+    public AgendamentoService(AgendamentoContext context, PerfilContext perfilContext)
     {
         _context = context;
-        _profissionalContext = profissionalContext;
+        _perfilContext = perfilContext;
     }
 
     public async Task<bool> Delete(Guid id)
@@ -41,13 +44,25 @@ public class AgendamentoService : IAgendamentoService
     {
         var userId = GetTokenFromHeader.GetUserIdByAuthorizationToken(authorization);
 
-        var profissional = await _profissionalContext.Profissionais
+        if (string.IsNullOrWhiteSpace(userId))
+            return [];
+
+        var roles = GetTokenFromHeader.GetRolesFromAuthorizationToken(authorization);
+        var isGerencial = roles.Any(r => string.Equals(r, Roles.Gerencial.GetDescription(), StringComparison.OrdinalIgnoreCase));
+
+        if (isGerencial)
+        {
+            var all = await _context.Agendamentos.ToListAsync();
+            return all.ToDto();
+        }
+
+        var perfil = await _perfilContext.Perfil
             .FirstOrDefaultAsync(p => p.UserId.ToString() == userId);
 
-        if (profissional == null)
-            return null;
+        if (perfil == null)
+            return [];
         
-        var agendamentos = await _context.Agendamentos.Where(x => x.ProfissionalId == profissional.Id).ToListAsync();
+        var agendamentos = await _context.Agendamentos.Where(x => x.PerfilId == perfil.Id).ToListAsync();
 
         return agendamentos.ToDto();
     }
@@ -60,16 +75,40 @@ public class AgendamentoService : IAgendamentoService
         return agendamentos.Select(a => a.ToDto()!);
     }
 
-    public async Task<IEnumerable<AgendamentoDto>> GetByProfissionalId(Guid profissionalId)
+    public async Task<IEnumerable<AgendamentoDto>> GetByPerfilId(Guid perfilId)
     {
          var agendamentos = await _context.Agendamentos
-                                        .Where(a => a.ProfissionalId == profissionalId)
+                                        .Where(a => a.PerfilId == perfilId)
                                         .ToListAsync();
         return agendamentos.Select(a => a.ToDto()!);
     }
 
     public async Task<AgendamentoDto?> Post(AgendamentoDto agendamentoDto)
     {
+        var agendamento = agendamentoDto.ToEntity();
+        if (agendamento == null) return null;
+
+        _context.Agendamentos.Add(agendamento);
+        await _context.SaveChangesAsync();
+        return agendamento.ToDto();
+    }
+
+    public async Task<AgendamentoDto?> Post(AgendamentoDto agendamentoDto, string authorization)
+    {
+        // Resolve perfil from authorization token
+        var userId = GetTokenFromHeader.GetUserIdByAuthorizationToken(authorization);
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        var perfil = await _perfilContext.Perfil
+            .FirstOrDefaultAsync(p => p.UserId.ToString() == userId);
+
+        if (perfil == null)
+            return null;
+
+        // Force perfil association to the authenticated perfil
+        agendamentoDto.PerfilId = perfil.Id;
+
         var agendamento = agendamentoDto.ToEntity();
         if (agendamento == null) return null;
 
@@ -89,7 +128,7 @@ public class AgendamentoService : IAgendamentoService
         result.DataHora = agendamentoDto.DataHora;
         result.Status = agendamentoDto.Status;
         result.TipoAtendimento = agendamentoDto.TipoAtendimento;
-        result.Observacoes = agendamentoDto.Observacoes;
+        result.Observacoes = agendamentoDto.Observacoes ?? string.Empty;
         result.AtualizarDataAlteracao();
 
         _context.Agendamentos.Update(result);

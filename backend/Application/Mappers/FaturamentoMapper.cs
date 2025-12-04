@@ -13,13 +13,13 @@ public static class FaturamentoMapper
             DataFaturamento = faturamento.DataFaturamento,
             DataInicio = faturamento.DataInicio,
             DataFim = faturamento.DataFim,
-            ProfissionalId = faturamento.ProfissionalId,
-            ProfissionalNome = faturamento.Profissional?.NomeCompleto,
+            PerfilId = faturamento.PerfilId,
+            ProfissionalNome = faturamento.Perfil?.NomeCompleto,
             ValorTotal = faturamento.ValorTotal,
             TotalAtendimentos = faturamento.TotalAtendimentos,
             Status = faturamento.Status,
             Observacoes = faturamento.Observacoes,
-            Itens = faturamento.Itens?.Select(i => i.ToDto()).ToList() ?? new List<ItemFaturamentoDto>()
+            Itens = faturamento.Itens?.Select(i => i.ToDto()).ToList() ?? []
         };
     }
 
@@ -47,7 +47,7 @@ public static class FaturamentoMapper
             dto.ValorTotal,
             dto.TotalAtendimentos,
             dto.Status,
-            dto.ProfissionalId,
+            dto.PerfilId,
             dto.Observacoes
         );
     }

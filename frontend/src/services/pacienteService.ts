@@ -2,7 +2,7 @@
 import type { PacienteDto } from '../types/api';
 import client from './apiClient';
 
-const API_PREFIX = 'api/Paciente';
+const API_PREFIX = 'Paciente';
 
 export const getPacientes = (): Promise<PacienteDto[]> => {
   return client<PacienteDto[]>(API_PREFIX, {});

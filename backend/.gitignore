@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Ignore Entity Framework Core migrations folders
+# Ignore any folder named 'Migrations' recursively
+**/Migrations/**
+**/migrations/**
+# Explicitly ignore Infrastructure migrations
+Infrastructure/Migrations/**

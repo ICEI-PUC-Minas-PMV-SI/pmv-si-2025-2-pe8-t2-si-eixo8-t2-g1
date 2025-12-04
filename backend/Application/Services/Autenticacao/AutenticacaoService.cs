@@ -5,7 +5,7 @@ using Domain.Utils;
 using Infrastructure.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,28 +13,24 @@ using System.Text;
 
 namespace Application.Services.Autenticacao;
 
-public class AutenticacaoService(UserContext context, IConfiguration configuration, IEmailService emailService) : IAuthService
+public class AutenticacaoService : IAuthService
 {
-    public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    private readonly UserContext _context;
+    private readonly PerfilContext _perfilContext;
+    private readonly TokenSettings _tokenSettings;
+    private readonly IEmailService _emailService;
+
+    public AutenticacaoService(UserContext context, PerfilContext perfilContext, IOptions<TokenSettings> tokenOptions, IEmailService emailService)
     {
-        var user = await context.Users.SingleOrDefaultAsync(u => u.Id == userId);
-        if (user is null)
-            return false;
-
-        var verify = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, currentPassword);
-        if (verify == PasswordVerificationResult.Failed)
-            return false;
-
-        var hashed = new PasswordHasher<User>().HashPassword(user, newPassword);
-        user.PasswordHash = hashed;
-        context.Users.Update(user);
-        await context.SaveChangesAsync();
-        return true;
+        _context = context;
+        _perfilContext = perfilContext;
+        _tokenSettings = tokenOptions.Value;
+        _emailService = emailService;
     }
 
     public async Task<TokenResponseDto?> LoginAsync(UserDto request)
     {
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
         if (user is null)
         {
             return null;
@@ -45,7 +41,7 @@ public class AutenticacaoService(UserContext context, IConfiguration configurati
             return null;
         }
 
-        return CreateTokenResponse(user);
+        return await CreateTokenResponseAsync(user);
     }
 
     public async Task<bool?> ResetPasswordAsync(string token, string password)
@@ -55,7 +51,7 @@ public class AutenticacaoService(UserContext context, IConfiguration configurati
         if (id == null)
             return null;
 
-        var user = await context.Users.SingleOrDefaultAsync(u => u.Id == Guid.Parse(id));
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Id == Guid.Parse(id));
 
         if (user is null)
             return null;
@@ -65,54 +61,77 @@ public class AutenticacaoService(UserContext context, IConfiguration configurati
 
         user.PasswordHash = hashedPassword;
 
-        context.Users.Update(user);
-        await context.SaveChangesAsync();
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<string?> SendEmailResetPassword(string email)
     {
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
         if (user is null)
             return null;
 
-        var token = CreateToken(user, Roles.ROLE_RST_PSWD, DateTime.UtcNow.AddMinutes(15));
+        var roleDesc = Roles.RstPswd.GetDescription() ?? "rst-pswd";
+        var token = CreateToken(user, roleDesc, DateTime.UtcNow.AddMinutes(15));
 
-        await emailService.SendPasswordResetEmailAsync(user.Email, token);
+        await _emailService.SendPasswordResetEmailAsync(user.Email, token);
 
         return token;
     }
 
-    private TokenResponseDto CreateTokenResponse(User user)
+    private async Task<TokenResponseDto> CreateTokenResponseAsync(User user)
     {
+        // Determine issued role based on user's perfil (if exists)
+        var issuedRoleDesc = string.Empty;
+
+        var perfil = await _perfilContext.Perfil
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == user.Id);
+
+        if (perfil == null || string.IsNullOrWhiteSpace(perfil.Tipo))
+        {
+            issuedRoleDesc = Roles.Default.GetDescription() ?? "default";
+        }
+        else
+        {
+            var tipo = perfil.Tipo == Roles.Gerencial.GetDescription() ? "ger" : "pro";
+            issuedRoleDesc = EnumHelper.GetDescriptionFromString<Roles>(tipo);
+        }
+
         return new TokenResponseDto
         {
-            AccessToken = CreateToken(user),
+            AccessToken = CreateToken(user, issuedRoleDesc),
         };
     }
 
     public async Task<bool> RegisterAsync(UserDto request)
     {
-        if (await context.Users.AnyAsync(u => u.Email == request.Email))
+        return await RegisterAsync(request, Roles.Default);
+    }
+
+    public async Task<bool> RegisterAsync(UserDto request, Roles role)
+    {
+        if (await _context.Users.AnyAsync(u => u.Email == request.Email))
         {
             return false;
         }
 
-        var user = new User(request.Email, Roles.ROLE_PROFISSIONAL);
+        var user = new User(request.Email, role.ToString());
         var hashedPassword = new PasswordHasher<User>()
             .HashPassword(user, request.Password);
 
         user.UpdateHashPassword(hashedPassword);
 
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
 
         return true;
     }
 
-    private string CreateToken(User user, string role = Roles.ROLE_PROFISSIONAL, DateTime? expire = null)
+    private string CreateToken(User user, string role, DateTime? expire = null)
     {
         var claims = new List<Claim>
         {
@@ -121,16 +140,20 @@ public class AutenticacaoService(UserContext context, IConfiguration configurati
             new(ClaimTypes.Role, role)
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(configuration.GetSection("TokenSettings")["Token"]!));
+        var keyString = _tokenSettings.Token;
+        if (string.IsNullOrEmpty(keyString))
+        {
+            throw new InvalidOperationException("TokenSettings:Token configuration is missing.");
+        }
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyString));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
         var tokenDescriptor = new JwtSecurityToken(
-            issuer: configuration.GetSection("TokenSettings")["Issuer"],
-            audience: configuration.GetSection("TokenSettings")["Audience"],
+            issuer: _tokenSettings.Issuer,
+            audience: _tokenSettings.Audience,
             claims: claims,
-            expires: expire ?? DateTime.UtcNow.AddMinutes(30),
+            expires: expire ?? DateTime.UtcNow.AddMinutes(_tokenSettings.ExpirationMinutes),
             signingCredentials: creds
         );
 
@@ -139,6 +162,9 @@ public class AutenticacaoService(UserContext context, IConfiguration configurati
 
     private static string? GetUserIdByAuthorizationToken(string token)
     {
+        if (string.IsNullOrEmpty(token) || token.Length <= 7)
+            return null;
+
         token = token.Substring(7);
 
         var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(token);

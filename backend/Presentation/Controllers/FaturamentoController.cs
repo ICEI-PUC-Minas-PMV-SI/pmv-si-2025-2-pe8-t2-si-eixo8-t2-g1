@@ -10,8 +10,8 @@ using Domain.Interfaces.Repositorys;
 
 namespace Presentation.Controllers;
 
-[Authorize(Roles = $"{Roles.ROLE_PROFISSIONAL},{Roles.ROLE_GERENCIAL}")]
-[Route("api/[controller]")]
+[Authorize(Policy = "ProOrGer")]
+[Route("[controller]")]
 [ApiController]
 public class FaturamentoController : ControllerBase
 {
@@ -76,11 +76,11 @@ public class FaturamentoController : ControllerBase
         }
     }
 
-    [HttpGet("profissional/{profissionalId}")]
-    [SwaggerOperation(Summary = "Buscar faturamentos por profissional", Description = "Retorna todos os faturamentos de um profissional específico")]
-    [SwaggerResponse(200, "Lista de faturamentos do profissional retornada com sucesso", typeof(IEnumerable<FaturamentoDto>))]
+    [HttpGet("perfil/{perfilId}")]
+    [SwaggerOperation(Summary = "Buscar faturamentos por perfil", Description = "Retorna todos os faturamentos de um perfil específico")]
+    [SwaggerResponse(200, "Lista de faturamentos do perfil retornada com sucesso", typeof(IEnumerable<FaturamentoDto>))]
     [SwaggerResponse(500, "Erro interno do servidor")]
-    public async Task<ActionResult> BuscarPorProfissionalId(Guid profissionalId)
+    public async Task<ActionResult> BuscarPorPerfilId(Guid perfilId)
     {
         if (!ModelState.IsValid)
         {
@@ -89,7 +89,7 @@ public class FaturamentoController : ControllerBase
 
         try
         {
-            return Ok(await _faturamentoService.GetByProfissionalId(profissionalId));
+            return Ok(await _faturamentoService.GetByPerfilId(perfilId));
         }
         catch (ArgumentException e)
         {
@@ -169,7 +169,7 @@ public class FaturamentoController : ControllerBase
             }
             else
             {
-                return BadRequest("Nenhum agendamento realizado encontrado para o período e profissional especificados.");
+                return BadRequest("Nenhum agendamento realizado encontrado para o período e perfil especificados.");
             }
         }
         catch (ArgumentException e)
@@ -302,12 +302,12 @@ public class FaturamentoController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                var profissionalId = await _faturamentoRepository.GetProfissionalIdByUserId(userId);
-                if (!profissionalId.HasValue)
+                var perfilId = await _faturamentoRepository.GetPerfilIdByUserId(userId);
+                if (!perfilId.HasValue)
                 {
-                    return StatusCode((int)HttpStatusCode.BadRequest, "Profissional não encontrado para o usuário autenticado.");
+                    return StatusCode((int)HttpStatusCode.BadRequest, "Perfil não encontrado para o usuário autenticado.");
                 }
-                faturamentoAvulso.ProfissionalId = profissionalId.Value;
+                faturamentoAvulso.PerfilId = perfilId.Value;
             }
             var faturamentoDto = await _faturamentoService.CriarFaturamentoAvulso(faturamentoAvulso);
             return Ok(faturamentoDto);

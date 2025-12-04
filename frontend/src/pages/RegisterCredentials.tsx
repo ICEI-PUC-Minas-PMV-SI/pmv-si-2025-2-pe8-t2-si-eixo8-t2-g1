@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { registerUser, login } from "@/services/authService";
+import { registerUser } from "@/services/authService";
 
 const credentialsSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255, { message: "Email deve ter menos de 255 caracteres" }),
@@ -41,33 +41,30 @@ const RegisterCredentials = () => {
   const onSubmit = async (data: CredentialsFormData) => {
     try {
       setIsLoading(true);
-      
+
       const tokenResponse = await registerUser({
         email: data.email,
         password: data.password
       });
-      
-      const loginResponse = await login({
-        email: data.email,
-        password: data.password
-      });
-      localStorage.setItem('credentialsData', JSON.stringify({
-        email: data.email,
-        password: data.password,
-        accessToken: loginResponse.accessToken
-      }));
-      
-      navigate('/register-profissional');
+
+      const token = tokenResponse.accessToken;
+
+      if (token) {
+        sessionStorage.setItem('token', token);
+        navigate('/register-perfil');
+      } else {
+        throw new Error("Token não recebido após o cadastro.");
+      }
     } catch (error: any) {
       console.error('Erro no registro:', error);
-      
+
       let errorText = "Não foi possível criar a conta";
       if (error.message && error.message.includes("Email already exists")) {
         errorText = "Este email já possui uma conta vinculada. Tente fazer login ou use outro email.";
       } else if (error.message && error.message.includes("400")) {
         errorText = "Dados inválidos. Verifique se o email está correto e a senha tem pelo menos 6 caracteres.";
       }
-      
+
       toast({
         variant: "destructive",
         title: "Erro no cadastro",
@@ -97,16 +94,14 @@ const RegisterCredentials = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
-              <img src={logo} alt="Logo" className="w-10 h-10" />
-            </div>
+            <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">neurohabiliTo</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground">Health Scheduler</CardTitle>
           <CardDescription className="text-muted-foreground">
             Etapa 1 de 2 - Credenciais de Acesso
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
@@ -194,7 +189,7 @@ const RegisterCredentials = () => {
                 <ArrowLeft size={16} className="mr-2" />
                 Voltar
               </Button>
-              
+
               <Button
                 type="submit"
                 className="flex-1"
@@ -208,7 +203,7 @@ const RegisterCredentials = () => {
                 ) : (
                   <div className="flex items-center gap-2">
                     <UserPlus size={16} />
-                    Finalizar Cadastro
+                    Preencher Perfil
                   </div>
                 )}
               </Button>

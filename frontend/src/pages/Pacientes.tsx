@@ -22,7 +22,8 @@ import {
   updatePaciente,
   getPacienteById,
 } from "@/services/pacienteService";
-import { PacienteDto } from "@/types/api";
+import { PacienteDto, Role } from "@/types/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const pacienteSchema = z.object({
   nomeCompleto: z.string().nonempty({ message: "Nome é obrigatório" }),
@@ -39,6 +40,7 @@ const Pacientes = () => {
   const [patients, setPatients] = useState<PacienteDto[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PacienteDto | null>(null);
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
 
   const {
     register,
@@ -51,8 +53,10 @@ const Pacientes = () => {
 
   const fetchPatients = async () => {
     try {
-      const data = await getPacientes();
-      setPatients(data);
+      if (user?.role === Role.Gerencia || user?.role === Role.Profissional) {
+        const data = await getPacientes();
+        setPatients(data);
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -63,8 +67,10 @@ const Pacientes = () => {
   };
 
   useEffect(() => {
-    fetchPatients();
-  }, []);
+    if (user) {
+      fetchPatients();
+    }
+  }, [user, toast]);
 
   const handleAddPatient = () => {
     setDialogType("new");
@@ -113,6 +119,27 @@ const Pacientes = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (user?.role !== Role.Gerencia && user?.role !== Role.Profissional) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+          <p className="text-xs text-muted-foreground mt-2">Role atual: {user?.role}</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

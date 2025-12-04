@@ -18,7 +18,7 @@ public static class AgendamentoMapper
             Status = agendamento.Status,
             Observacoes = agendamento.Observacoes,
             PacienteId = agendamento.PacienteId,
-            ProfissionalId = agendamento.ProfissionalId
+            PerfilId = agendamento.PerfilId
         };
     }
     public static IEnumerable<AgendamentoDto?> ToDto(this IEnumerable<Agendamento> agendamentos)
@@ -33,7 +33,7 @@ public static class AgendamentoMapper
                 Status = agendamento.Status,
                 Observacoes = agendamento.Observacoes,
                 PacienteId = agendamento.PacienteId,
-                ProfissionalId = agendamento.ProfissionalId
+                PerfilId = agendamento.PerfilId
             };
         }
     }
@@ -48,7 +48,7 @@ public static class AgendamentoMapper
             agendamentoDto.TipoAtendimento,
             agendamentoDto.Status,
             agendamentoDto.PacienteId,
-            agendamentoDto.ProfissionalId,
+            agendamentoDto.PerfilId,
             agendamentoDto.Observacoes);
 
         if (agendamentoDto.Id != System.Guid.Empty)

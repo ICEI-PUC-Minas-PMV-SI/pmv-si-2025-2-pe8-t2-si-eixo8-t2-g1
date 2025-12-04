@@ -6,7 +6,7 @@ public interface IFaturamentoService
 {
     Task<FaturamentoDto?> Get(Guid id);
     Task<IEnumerable<FaturamentoDto>> GetAll();
-    Task<IEnumerable<FaturamentoDto>> GetByProfissionalId(Guid profissionalId);
+    Task<IEnumerable<FaturamentoDto>> GetByPerfilId(Guid perfilId);
     Task<IEnumerable<FaturamentoDto>> GetByPeriodo(DateTime dataInicio, DateTime dataFim);
     Task<FaturamentoDto?> Post(FaturamentoDto faturamentoDto);
     Task<FaturamentoDto?> Put(FaturamentoDto faturamentoDto);

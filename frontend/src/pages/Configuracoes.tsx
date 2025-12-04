@@ -13,8 +13,31 @@ import {
     Eye,
     EyeOff,
     AlertCircle,
-    CheckCircle
+    CheckCircle,
+    Edit,
+    Trash,
+    Users as UsersIcon
 } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { getPerfis, updatePerfil } from "@/services/profissionalService";
+import { PerfilDto, Role } from "@/types/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +46,8 @@ import { z } from "zod";
 const perfilSchema = z.object({
     nomeCompleto: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
     email: z.string().email("Email inválido"),
-    especialidade: z.string().min(2, "Especialidade deve ter pelo menos 2 caracteres"),
+    tipo: z.string().min(2, "Tipo deve ter pelo menos 2 caracteres"),
+    registroConselho: z.string().min(2, "Registro do conselho é obrigatório"),
 });
 
 const senhaSchema = z.object({
@@ -44,14 +68,21 @@ const Configuracoes = () => {
     const [showSenhaAtual, setShowSenhaAtual] = useState(false);
     const [showNovaSenha, setShowNovaSenha] = useState(false);
     const [showConfirmarSenha, setShowConfirmarSenha] = useState(false);
+
     const { toast } = useToast();
+    const { user } = useAuth();
+    const [profissionais, setProfissionais] = useState<PerfilDto[]>([]);
+    const [loadingProfissionais, setLoadingProfissionais] = useState(false);
+    const [editingProfissional, setEditingProfissional] = useState<PerfilDto | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const perfilForm = useForm<PerfilFormData>({
         resolver: zodResolver(perfilSchema),
         defaultValues: {
             nomeCompleto: "",
             email: "",
-            especialidade: "",
+            tipo: "",
+            registroConselho: "",
         }
     });
 
@@ -67,6 +98,54 @@ const Configuracoes = () => {
     useEffect(() => {
         carregarDadosUsuario();
     }, []);
+
+    useEffect(() => {
+        if (user?.role === Role.Gerencia) {
+            carregarProfissionais();
+        }
+    }, [user]);
+
+    const carregarProfissionais = async () => {
+        try {
+            setLoadingProfissionais(true);
+            const data = await getPerfis();
+            setProfissionais(data);
+        } catch (error) {
+            console.error('Erro ao carregar profissionais:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro",
+                description: "Erro ao carregar lista de profissionais.",
+            });
+        } finally {
+            setLoadingProfissionais(false);
+        }
+    };
+
+    const handleSaveProfissional = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingProfissional) return;
+
+        try {
+            setLoading(true);
+            await updatePerfil(editingProfissional);
+            toast({
+                title: "Sucesso",
+                description: "Profissional atualizado com sucesso.",
+            });
+            setIsEditDialogOpen(false);
+            carregarProfissionais();
+        } catch (error) {
+            console.error('Erro ao atualizar profissional:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro",
+                description: "Erro ao atualizar profissional.",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const carregarDadosUsuario = async () => {
         try {
@@ -93,7 +172,7 @@ const Configuracoes = () => {
 
             console.log('Email extraído do token:', emailClaim);
 
-            const response = await fetch(`https://localhost:7084/api/Profissional/me`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/Perfil/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
@@ -109,7 +188,8 @@ const Configuracoes = () => {
                 const dadosUsuario = {
                     nomeCompleto: profissional.nomeCompleto || "",
                     email: emailClaim,
-                    especialidade: profissional.especialidade || "",
+                    tipo: profissional.tipo || "",
+                    registroConselho: profissional.registroConselho || "",
                 };
 
                 perfilForm.reset(dadosUsuario);
@@ -148,7 +228,7 @@ const Configuracoes = () => {
                 return;
             }
 
-            const response = await fetch(`https://localhost:7084/api/Profissional`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/Perfil`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -156,7 +236,8 @@ const Configuracoes = () => {
                 },
                 body: JSON.stringify({
                     nomeCompleto: data.nomeCompleto,
-                    especialidade: data.especialidade,
+                    tipo: data.tipo,
+                    registroConselho: data.registroConselho,
                 }),
             });
 
@@ -193,7 +274,7 @@ const Configuracoes = () => {
                 return;
             }
 
-            const response = await fetch(`https://localhost:7084/api/Auth/change-password`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/Auth/change-password`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -252,9 +333,12 @@ const Configuracoes = () => {
                 </div>
 
                 <Tabs defaultValue="perfil" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className={`grid w-full ${user?.role === Role.Gerencia ? 'grid-cols-3' : 'grid-cols-2'}`}>
                         <TabsTrigger value="perfil">Perfil</TabsTrigger>
                         <TabsTrigger value="senha">Segurança</TabsTrigger>
+                        {user?.role === Role.Gerencia && (
+                            <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+                        )}
                     </TabsList>
 
                     <TabsContent value="perfil" className="space-y-6">
@@ -299,33 +383,50 @@ const Configuracoes = () => {
                                                         id="email"
                                                         {...perfilForm.register("email")}
                                                         type="email"
-                                                        disabled
-                                                        className="bg-muted"
                                                     />
-                                                    <p className="text-xs text-muted-foreground">
-                                                        O email não pode ser alterado
-                                                    </p>
+                                                    {perfilForm.formState.errors.email && (
+                                                        <p className="text-sm text-red-600 flex items-center gap-1">
+                                                            <AlertCircle className="h-4 w-4" />
+                                                            {perfilForm.formState.errors.email.message}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
 
                                             <div className="grid gap-4 md:grid-cols-2">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="especialidade">Especialidade</Label>
+                                                    <Label htmlFor="tipo">Tipo</Label>
                                                     <Input
-                                                        id="especialidade"
-                                                        {...perfilForm.register("especialidade")}
-                                                        placeholder="Sua especialidade profissional"
+                                                        id="tipo"
+                                                        {...perfilForm.register("tipo")}
+                                                        placeholder="Tipo de perfil"
                                                     />
-                                                    {perfilForm.formState.errors.especialidade && (
+                                                    {perfilForm.formState.errors.tipo && (
                                                         <p className="text-sm text-red-600 flex items-center gap-1">
                                                             <AlertCircle className="h-4 w-4" />
-                                                            {perfilForm.formState.errors.especialidade.message}
+                                                            {perfilForm.formState.errors.tipo.message}
                                                         </p>
                                                     )}
                                                 </div>
 
 
                                             </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="registroConselho">Registro do Conselho</Label>
+                                                <Input
+                                                    id="registroConselho"
+                                                    {...perfilForm.register("registroConselho")}
+                                                    placeholder="CRM/CRP/Etc"
+                                                />
+                                                {perfilForm.formState.errors.registroConselho && (
+                                                    <p className="text-sm text-red-600 flex items-center gap-1">
+                                                        <AlertCircle className="h-4 w-4" />
+                                                        {perfilForm.formState.errors.registroConselho.message}
+                                                    </p>
+                                                )}
+                                            </div>
+
 
                                             <Separator />
 
@@ -467,10 +568,121 @@ const Configuracoes = () => {
                                 </form>
                             </CardContent>
                         </Card>
+
                     </TabsContent>
+
+                    {user?.role === Role.Gerencia && (
+                        <TabsContent value="profissionais" className="space-y-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <UsersIcon className="h-5 w-5" />
+                                        Gerenciar Profissionais
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Visualize e gerencie os profissionais cadastrados
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {loadingProfissionais ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                        </div>
+                                    ) : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Nome</TableHead>
+                                                    <TableHead>Tipo</TableHead>
+                                                    <TableHead>Registro</TableHead>
+                                                    <TableHead className="w-[100px]">Ações</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {profissionais.map((profissional) => (
+                                                    <TableRow key={profissional.id}>
+                                                        <TableCell>{profissional.nomeCompleto}</TableCell>
+                                                        <TableCell>{profissional.tipo}</TableCell>
+                                                        <TableCell>{profissional.registroConselho}</TableCell>
+                                                        <TableCell>
+                                                            <Dialog open={isEditDialogOpen && editingProfissional?.id === profissional.id} onOpenChange={(open) => {
+                                                                setIsEditDialogOpen(open);
+                                                                if (open) setEditingProfissional(profissional);
+                                                                else setEditingProfissional(null);
+                                                            }}>
+                                                                <DialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon">
+                                                                        <Edit className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent>
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Editar Profissional</DialogTitle>
+                                                                        <DialogDescription>
+                                                                            Faça alterações nos dados do profissional aqui. Clique em salvar quando terminar.
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+                                                                    <form onSubmit={handleSaveProfissional}>
+                                                                        <div className="grid gap-4 py-4">
+                                                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                                                <Label htmlFor="edit-nome" className="text-right">
+                                                                                    Nome
+                                                                                </Label>
+                                                                                <Input
+                                                                                    id="edit-nome"
+                                                                                    value={editingProfissional?.nomeCompleto || ''}
+                                                                                    onChange={(e) => setEditingProfissional(prev => prev ? { ...prev, nomeCompleto: e.target.value } : null)}
+                                                                                    className="col-span-3"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                                                <Label htmlFor="edit-tipo" className="text-right">
+                                                                                    Tipo
+                                                                                </Label>
+                                                                                <Input
+                                                                                    id="edit-tipo"
+                                                                                    value={editingProfissional?.tipo || ''}
+                                                                                    onChange={(e) => setEditingProfissional(prev => prev ? { ...prev, tipo: e.target.value } : null)}
+                                                                                    className="col-span-3"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                                                <Label htmlFor="edit-registro" className="text-right">
+                                                                                    Registro
+                                                                                </Label>
+                                                                                <Input
+                                                                                    id="edit-registro"
+                                                                                    value={editingProfissional?.registroConselho || ''}
+                                                                                    onChange={(e) => setEditingProfissional(prev => prev ? { ...prev, registroConselho: e.target.value } : null)}
+                                                                                    className="col-span-3"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                        <DialogFooter>
+                                                                            <Button type="submit" disabled={loading}>
+                                                                                {loading ? (
+                                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                                                ) : (
+                                                                                    "Salvar alterações"
+                                                                                )}
+                                                                            </Button>
+                                                                        </DialogFooter>
+                                                                    </form>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
-        </Layout>
+        </Layout >
     );
 };
 

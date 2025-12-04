@@ -17,16 +17,35 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
+	  <Compile Remove="Properties\PublishProfiles\**" />
+	  <Compile Remove="Properties\ServiceDependencies\**" />
+	  <Content Remove="Properties\PublishProfiles\**" />
+	  <Content Remove="Properties\ServiceDependencies\**" />
+	  <EmbeddedResource Remove="Properties\PublishProfiles\**" />
+	  <EmbeddedResource Remove="Properties\ServiceDependencies\**" />
+	  <None Remove="Properties\PublishProfiles\**" />
+	  <None Remove="Properties\ServiceDependencies\**" />
+	  <_WebToolingArtifacts Remove="Properties\PublishProfiles\**" />
+	  <_WebToolingArtifacts Remove="Properties\ServiceDependencies\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Properties\serviceDependencies.api-clinica-to - Zip Deploy.json" />
+	  <None Remove="Properties\serviceDependencies.json" />
+	  <None Remove="Properties\serviceDependencies.local.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.10" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.11" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>

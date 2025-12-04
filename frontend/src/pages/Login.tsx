@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getMeuPerfil } from "@/services/profissionalService";
 import logo from "@/assets/logo.png";
 
 const loginSchema = z.object({
@@ -36,18 +37,42 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    
+
     try {
       await login(data);
-      toast({
-        title: "Login realizado com sucesso",
-        description: "Você será redirecionado em breve.",
-      });
-    } catch (error) {
+
+      // Check if user has a professional profile
+      try {
+        await getMeuPerfil();
+
+        toast({
+          title: "Login realizado com sucesso",
+          description: "Você será redirecionado em breve.",
+        });
+        navigate("/dashboard");
+      } catch (error) {
+        // If professional not found (404) or other error, redirect to registration
+        toast({
+          title: "Complete seu cadastro",
+          description: "Por favor, finalize o cadastro do seu perfil profissional.",
+        });
+        navigate("/register-perfil");
+      }
+
+    } catch (error: any) {
+      let title = "Erro no login";
+      let description = "Credenciais inválidas ou erro no servidor.";
+
+      if (error.message && error.message.includes("400")) {
+        description = "Usuário ou senha inválidos.";
+      } else if (error.message && error.message.includes("500")) {
+        description = "Serviço indisponível. Tente novamente mais tarde.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Erro no login",
-        description: "Credenciais inválidas ou erro no servidor.",
+        title: title,
+        description: description,
       });
     } finally {
       setIsLoading(false);
@@ -59,16 +84,14 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
-              <img src={logo} alt="Logo" className="w-10 h-10" />
-            </div>
+            <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">neurohabiliTo</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground">Health Scheduler</CardTitle>
           <CardDescription className="text-muted-foreground">
             Faça login para acessar sua conta
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
@@ -144,6 +167,15 @@ const Login = () => {
             >
               <UserPlus size={16} className="mr-2" />
               Criar Conta
+            </Button>
+
+            <Button
+              type="button"
+              variant="link"
+              className="w-full"
+              onClick={() => navigate("/forgot-password")}
+            >
+              Esqueci minha senha
             </Button>
           </form>
         </CardContent>

@@ -17,7 +17,7 @@ public class FaturamentoRepository : IFaturamentoRepository
     public async Task<Faturamento?> GetByIdAsync(Guid id)
     {
         return await _context.Faturamentos
-            .Include(f => f.Profissional)
+            .Include(f => f.Perfil)
             .Include(f => f.Itens)
                 .ThenInclude(i => i.Agendamento)
                     .ThenInclude(a => a.Paciente)
@@ -27,7 +27,7 @@ public class FaturamentoRepository : IFaturamentoRepository
     public async Task<IEnumerable<Faturamento>> GetAllAsync()
     {
         return await _context.Faturamentos
-            .Include(f => f.Profissional)
+            .Include(f => f.Perfil)
             .Include(f => f.Itens)
                 .ThenInclude(i => i.Agendamento)
                     .ThenInclude(a => a.Paciente)
@@ -35,14 +35,14 @@ public class FaturamentoRepository : IFaturamentoRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Faturamento>> GetByProfissionalIdAsync(Guid profissionalId)
+    public async Task<IEnumerable<Faturamento>> GetByPerfilIdAsync(Guid perfilId)
     {
         return await _context.Faturamentos
-            .Include(f => f.Profissional)
+            .Include(f => f.Perfil)
             .Include(f => f.Itens)
                 .ThenInclude(i => i.Agendamento)
                     .ThenInclude(a => a.Paciente)
-            .Where(f => f.ProfissionalId == profissionalId)
+            .Where(f => f.PerfilId == perfilId)
             .OrderByDescending(f => f.DataFaturamento)
             .ToListAsync();
     }
@@ -50,7 +50,7 @@ public class FaturamentoRepository : IFaturamentoRepository
     public async Task<IEnumerable<Faturamento>> GetByPeriodoAsync(DateTime dataInicio, DateTime dataFim)
     {
         return await _context.Faturamentos
-            .Include(f => f.Profissional)
+            .Include(f => f.Perfil)
             .Include(f => f.Itens)
                 .ThenInclude(i => i.Agendamento)
                     .ThenInclude(a => a.Paciente)
@@ -91,9 +91,9 @@ public class FaturamentoRepository : IFaturamentoRepository
         return item;
     }
 
-    public async Task<bool> ProfissionalExiste(Guid profissionalId)
+    public async Task<bool> PerfilExiste(Guid perfilId)
     {
-        return await _context.Profissional.AnyAsync(p => p.Id == profissionalId);
+        return await _context.Perfil.AnyAsync(p => p.Id == perfilId);
     }
 
     public async Task<bool> AgendamentoExiste(Guid agendamentoId)
@@ -101,9 +101,9 @@ public class FaturamentoRepository : IFaturamentoRepository
         return await _context.Agendamento.AnyAsync(a => a.Id == agendamentoId);
     }
 
-    public async Task<Guid?> GetProfissionalIdByUserId(Guid userId)
+    public async Task<Guid?> GetPerfilIdByUserId(Guid userId)
     {
-        return await _context.Profissional
+        return await _context.Perfil
             .Where(p => p.UserId == userId)
             .Select(p => (Guid?)p.Id)
             .FirstOrDefaultAsync();

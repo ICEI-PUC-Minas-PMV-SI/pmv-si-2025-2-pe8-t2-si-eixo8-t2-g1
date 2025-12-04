@@ -21,7 +21,7 @@ import { createFaturamento, gerarFaturamento } from "@/services/faturamentoServi
 import { CriarFaturamentoAvulsoDto, CriarFaturamentoDto } from "@/types/api";
 import { getPacientes } from "@/services/pacienteService";
 import { getAgendamentos } from "@/services/agendamentoService";
-import { getProfissionais } from "@/services/profissionalService";
+
 import { PacienteDto } from "@/types/api";
 
 // Função para obter um profissionalId válido
@@ -131,7 +131,7 @@ const NovoFaturamento = () => {
                 const faturamentoData: CriarFaturamentoAvulsoDto = {
                     paciente: pacientes.find(p => p.id === data.pacienteId)?.nomeCompleto || "",
                     servico: data.servico,
-                    data: new Date(data.data),
+                    data: new Date(data.data).toISOString(),
                     valor: data.valor,
                     status: "Rascunho",
                     formaPagamento: data.formaPagamento || "",

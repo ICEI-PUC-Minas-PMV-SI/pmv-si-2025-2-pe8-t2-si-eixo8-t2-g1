@@ -15,37 +15,50 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.png";
-
+import { useAuth } from "@/contexts/AuthContext";
+import { Role } from "@/types/api";
 const navItems = [
   {
     name: "Painel Inicial",
     href: "/dashboard",
     icon: Home,
+    roles: [Role.Gerencia, Role.Profissional],
   },
   {
     name: "Agendamento",
     href: "/agendamento",
     icon: Calendar,
+    roles: [Role.Gerencia, Role.Profissional],
   },
   {
     name: "Atendimento",
     href: "/atendimento",
     icon: ClipboardCheck,
+    roles: [Role.Profissional, Role.Gerencia],
   },
   {
     name: "Pacientes",
     href: "/pacientes",
     icon: Users,
+    roles: [Role.Gerencia, Role.Profissional],
   },
   {
     name: "Documentos",
     href: "/documentos",
     icon: FileText,
+    roles: [Role.Profissional],
   },
   {
     name: "Faturamento",
     href: "/faturamento",
     icon: CreditCard,
+    roles: [Role.Gerencia, Role.Profissional],
+  },
+  {
+    name: "Configurações",
+    href: "/configuracoes",
+    icon: Settings,
+    roles: [Role.Gerencia, Role.Profissional],
   },
 ];
 
@@ -53,12 +66,21 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (!user || !item.roles) {
+      return true;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (item.roles as any).includes(user.role);
+  });
 
   if (isMobile) {
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 safe-area-bottom">
         <nav className="flex justify-around items-center py-2 px-2">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Link
               key={item.name}
               to={item.href}
@@ -90,10 +112,11 @@ const Sidebar = () => {
       <div className="flex items-center p-4 border-b border-border h-16">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-clinic-teal flex items-center justify-center">
-              <img src={logo} alt="Logo" className="w-6 h-6" />
+            <img src={logo} alt="Logo" className="w-8 h-8 object-contain" />
+            <div className="flex flex-col">
+              <span className="font-bold text-lg">Health Scheduler</span>
+              <span className="text-[10px] text-muted-foreground break-all">{JSON.stringify(user)}</span>
             </div>
-            <span className="font-bold text-lg">neurohabiliTo</span>
           </div>
         )}
         <Button
@@ -108,7 +131,7 @@ const Sidebar = () => {
 
       <nav className="p-2">
         <ul className="space-y-2">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <li key={item.name}>
               <Link
                 to={item.href}

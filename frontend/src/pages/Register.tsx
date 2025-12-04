@@ -7,17 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { registerProfissional as registerService } from "@/services/authService";
+import { registerUser } from "@/services/authService";
+import { createPerfil } from "@/services/profissionalService";
+import { Role } from "@/types/api";
+
+const PROFESSIONAL_TYPES = [
+  "Terapeuta",
+  "Psicologo",
+  "RH",
+  "Fisioterapeuta",
+  "Nutricionista",
+  "Fonoaudiologo",
+  "Outro"
+];
 
 const registerSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255, { message: "Email deve ter menos de 255 caracteres" }),
   password: z.string().trim().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
   confirmPassword: z.string().trim(),
   nomeCompleto: z.string().trim().min(2, { message: "Nome completo deve ter pelo menos 2 caracteres" }),
-  especialidade: z.string().trim().min(2, { message: "Especialidade é obrigatória" })
+  tipoProfissional: z.string({ required_error: "Selecione o tipo de profissional" }).min(1, "Selecione o tipo de profissional"),
+  especialidade: z.string().optional()
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
@@ -35,6 +49,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -42,24 +57,42 @@ const Register = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
-    
+
     try {
-      await registerService({ 
-        email: data.email, 
+      // 1. Register User (Auth)
+      const tokenResponse = await registerUser({
+        email: data.email,
         password: data.password,
-        nomeCompleto: data.nomeCompleto,
-        especialidade: data.especialidade
+        role: Role.Profissional
       });
-      toast({
-        title: "Cadastro realizado com sucesso",
-        description: "Você já pode fazer login com suas credenciais.",
-      });
-      
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-      
+
+      if (tokenResponse.accessToken) {
+        // 2. Save token temporarily for the next request
+        sessionStorage.setItem('token', tokenResponse.accessToken);
+
+        // 3. Create Profile
+        await createPerfil({
+          nomeCompleto: data.nomeCompleto,
+          tipo: 'pro',
+          especialidade: data.especialidade,
+          registroConselho: ''
+        });
+
+        toast({
+          title: "Cadastro realizado com sucesso",
+          description: "Você já pode fazer login com suas credenciais.",
+        });
+
+        // Clear token to force fresh login
+        sessionStorage.removeItem('token');
+
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
+
     } catch (error: any) {
+      console.error(error);
       let errorText = "Não foi possível criar a conta";
       if (error.message && error.message.includes("Email already exists")) {
         errorText = "Email já possui uma conta vinculada.";
@@ -79,16 +112,14 @@ const Register = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
-              <img src={logo} alt="Logo" className="w-10 h-10" />
-            </div>
+            <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">neurohabiliTo</CardTitle>
+          <CardTitle className="text-2xl font-bold text-foreground">Health Scheduler</CardTitle>
           <CardDescription className="text-muted-foreground">
             Cadastre-se como profissional para começar
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
@@ -130,15 +161,36 @@ const Register = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="tipoProfissional" className="text-sm font-medium text-foreground">
+                Tipo de Profissional
+              </Label>
+              <Select onValueChange={(value) => setValue("tipoProfissional", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROFESSIONAL_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.tipoProfissional && (
+                <p className="text-sm text-destructive">{errors.tipoProfissional.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="especialidade" className="text-sm font-medium text-foreground">
-                Especialidade
+                Especialidade (Opcional)
               </Label>
               <div className="relative">
                 <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
                 <Input
                   id="especialidade"
                   type="text"
-                  placeholder="Ex: Fisioterapia, Terapia Ocupacional, Fonoaudiologia"
+                  placeholder="Ex: Terapia Cognitiva, Neuropsicologia"
                   className="pl-10"
                   {...register("especialidade")}
                 />

@@ -1,8 +1,18 @@
+using System.ComponentModel;
+
 namespace Domain.Utils;
 
-public class Roles
+public enum Roles
 {
-    public const string ROLE_RST_PSWD = "rst-pswd";
-    public const string ROLE_PROFISSIONAL = "pro";
-    public const string ROLE_GERENCIAL = "ger";
+    [Description("rst-pswd")]
+    RstPswd,
+
+    [Description("default")]
+    Default,
+
+    [Description("pro")]
+    Profissional,
+
+    [Description("ger")]
+    Gerencial
 }

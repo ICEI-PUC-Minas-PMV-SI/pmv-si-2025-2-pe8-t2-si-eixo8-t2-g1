@@ -1,32 +1,40 @@
 import client from './apiClient';
-import { ProfissionalDto } from '@/types/api';
+import { PerfilDto, TokenResponseDto } from '@/types/api';
 
-const API_PREFIX = 'api/Profissional';
+const API_PREFIX = 'Perfil';
 
-export const createProfissional = (data: Omit<ProfissionalDto, 'id' | 'userId'>): Promise<ProfissionalDto> => {
-    return client<ProfissionalDto>(API_PREFIX, { 
+export const createPerfil = (data: Omit<PerfilDto, 'id' | 'userId'>): Promise<TokenResponseDto> => {
+    return client<TokenResponseDto>(API_PREFIX, {
         data,
         method: 'POST'
     });
 };
 
-export const getProfissionais = (): Promise<ProfissionalDto[]> => {
-    return client<ProfissionalDto[]>(API_PREFIX, {});
+export const getPerfis = (): Promise<PerfilDto[]> => {
+    return client<PerfilDto[]>(API_PREFIX, {});
 };
 
-export const getProfissionalById = (id: string): Promise<ProfissionalDto> => {
-    return client<ProfissionalDto>(`${API_PREFIX}/${id}`, {});
+export const getPerfilById = (id: string): Promise<PerfilDto> => {
+    return client<PerfilDto>(`${API_PREFIX}/${id}`, {});
 };
 
-export const updateProfissional = (data: ProfissionalDto): Promise<ProfissionalDto> => {
-    return client<ProfissionalDto>(API_PREFIX, { 
+export const updatePerfil = (data: PerfilDto): Promise<PerfilDto> => {
+    return client<PerfilDto>(API_PREFIX, {
         data,
         method: 'PUT'
     });
 };
 
-export const deleteProfissional = (id: string): Promise<void> => {
-    return client<void>(`${API_PREFIX}/${id}`, { 
+export const getPerfilByUserId = (userId: string): Promise<PerfilDto> => {
+    return client<PerfilDto>(`${API_PREFIX}/user/${userId}`, {});
+};
+
+export const getMeuPerfil = (): Promise<PerfilDto> => {
+    return client<PerfilDto>(`${API_PREFIX}/me`, {});
+};
+
+export const deletePerfil = (id: string): Promise<void> => {
+    return client<void>(`${API_PREFIX}/${id}`, {
         method: 'DELETE'
     });
 };

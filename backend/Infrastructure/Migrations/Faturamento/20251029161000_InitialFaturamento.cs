@@ -19,7 +19,7 @@ namespace Infrastructure.Migrations.Faturamento
                     DataFaturamento = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DataInicio = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DataFim = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ProfissionalId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PerfilId = table.Column<Guid>(type: "uuid", nullable: true),
                     ValorTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     TotalAtendimentos = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -31,9 +31,9 @@ namespace Infrastructure.Migrations.Faturamento
                 {
                     table.PrimaryKey("PK_Faturamentos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Faturamentos_Profissional_ProfissionalId",
-                        column: x => x.ProfissionalId,
-                        principalTable: "Profissional",
+                        name: "FK_Faturamentos_Profissional_PerfilId",
+                        column: x => x.PerfilId,
+                        principalTable: "Perfil",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -67,9 +67,9 @@ namespace Infrastructure.Migrations.Faturamento
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Faturamentos_ProfissionalId",
+                name: "IX_Faturamentos_PerfilId",
                 table: "Faturamentos",
-                column: "ProfissionalId");
+                column: "PerfilId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ItensFaturamento_AgendamentoId",

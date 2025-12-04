@@ -11,7 +11,7 @@ public class FaturamentoContext : DbContext
     public DbSet<ItemFaturamento> ItensFaturamento { get; set; }
     
     public DbSet<Paciente> Paciente { get; set; }
-    public DbSet<Profissional> Profissional { get; set; }
+    public DbSet<Perfil> Perfil { get; set; }
     public DbSet<Agendamento> Agendamento { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,12 +23,12 @@ public class FaturamentoContext : DbContext
             entity.Property(e => e.DataFaturamento).IsRequired();
             entity.Property(e => e.DataInicio).IsRequired();
             entity.Property(e => e.DataFim).IsRequired();
-            entity.Property(e => e.ProfissionalId).IsRequired(false);
+            entity.Property(e => e.PerfilId).IsRequired(false);
             entity.Property(e => e.Status).IsRequired();
 
-            entity.HasOne(e => e.Profissional)
+            entity.HasOne(e => e.Perfil)
                   .WithMany()
-                  .HasForeignKey(e => e.ProfissionalId)
+                  .HasForeignKey(e => e.PerfilId)
                   .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(e => e.Itens)
@@ -56,9 +56,9 @@ public class FaturamentoContext : DbContext
             entity.Ignore(e => e.DataAlteracao);
         });
         
-        modelBuilder.Entity<Profissional>(entity =>
+        modelBuilder.Entity<Perfil>(entity =>
         {
-            entity.ToTable("Profissional");
+            entity.ToTable("Perfil");
             entity.HasKey(e => e.Id);
             entity.Ignore(e => e.DataCriacao);
             entity.Ignore(e => e.DataAlteracao);

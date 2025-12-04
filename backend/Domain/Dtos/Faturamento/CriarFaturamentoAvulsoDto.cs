@@ -11,5 +11,5 @@ public class CriarFaturamentoAvulsoDto
     public string? Observacoes { get; set; }
     public Guid PacienteId { get; set; }
     public Guid AgendamentoId { get; set; }
-    public Guid? ProfissionalId { get; set; }
+    public Guid? PerfilId { get; set; }
 }

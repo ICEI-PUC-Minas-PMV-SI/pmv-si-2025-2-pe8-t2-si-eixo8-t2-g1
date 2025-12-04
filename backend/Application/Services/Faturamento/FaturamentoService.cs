@@ -33,9 +33,9 @@ public class FaturamentoService : IFaturamentoService
         return faturamentos.Select(f => f.ToDto());
     }
 
-    public async Task<IEnumerable<FaturamentoDto>> GetByProfissionalId(Guid profissionalId)
+    public async Task<IEnumerable<FaturamentoDto>> GetByPerfilId(Guid perfilId)
     {
-        var faturamentos = await _faturamentoRepository.GetByProfissionalIdAsync(profissionalId);
+        var faturamentos = await _faturamentoRepository.GetByPerfilIdAsync(perfilId);
         return faturamentos.Select(f => f.ToDto());
     }
 
@@ -68,14 +68,14 @@ public class FaturamentoService : IFaturamentoService
     {
         var query = _agendamentoContext.Agendamentos
             .Include(a => a.Paciente)
-            .Include(a => a.Profissional)
+            .Include(a => a.Perfil)
             .Where(a => a.DataHora >= criarFaturamentoDto.DataInicio &&
                        a.DataHora <= criarFaturamentoDto.DataFim &&
                        a.Status == "Realizado");
 
-        if (criarFaturamentoDto.ProfissionalId.HasValue)
+        if (criarFaturamentoDto.PerfilId.HasValue)
         {
-            query = query.Where(a => a.ProfissionalId == criarFaturamentoDto.ProfissionalId.Value);
+            query = query.Where(a => a.PerfilId == criarFaturamentoDto.PerfilId.Value);
         }
 
         var agendamentos = await query.ToListAsync();
@@ -92,7 +92,7 @@ public class FaturamentoService : IFaturamentoService
             valorTotal,
             agendamentos.Count,
             EnumStatusFaturamento.Rascunho,
-            criarFaturamentoDto.ProfissionalId,
+            criarFaturamentoDto.PerfilId,
             criarFaturamentoDto.Observacoes
         );
 
@@ -133,12 +133,12 @@ public class FaturamentoService : IFaturamentoService
 
     public async Task<FaturamentoDto> CriarFaturamentoAvulso(CriarFaturamentoAvulsoDto faturamentoAvulso)
     {
-        if (faturamentoAvulso.ProfissionalId.HasValue)
+        if (faturamentoAvulso.PerfilId.HasValue)
         {
-            var profissionalExiste = await _faturamentoRepository.ProfissionalExiste(faturamentoAvulso.ProfissionalId.Value);
+            var profissionalExiste = await _faturamentoRepository.PerfilExiste(faturamentoAvulso.PerfilId.Value);
             if (!profissionalExiste)
             {
-                throw new ArgumentException($"Profissional com ID {faturamentoAvulso.ProfissionalId} não encontrado.");
+                throw new ArgumentException($"Perfil com ID {faturamentoAvulso.PerfilId} não encontrado.");
             }
         }
 
@@ -149,7 +149,7 @@ public class FaturamentoService : IFaturamentoService
             faturamentoAvulso.Valor,
             1,
             EnumStatusFaturamento.Rascunho,
-            faturamentoAvulso.ProfissionalId,
+            faturamentoAvulso.PerfilId,
             faturamentoAvulso.Observacoes
         );
 

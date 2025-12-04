@@ -15,11 +15,13 @@ import Faturamento from "./pages/Faturamento";
 import NovoFaturamento from "./pages/NovoFaturamento";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import RegisterProfissional from "./pages/RegisterProfissional";
+import RegisterPerfil from "./pages/RegisterPerfil";
 import RegisterCredentials from "./pages/RegisterCredentials";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -33,8 +35,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/register-profissional" element={<RegisterProfissional />} />
+            <Route path="/register-perfil" element={<RegisterPerfil />} />
             <Route path="/register-credentials" element={<RegisterCredentials />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
